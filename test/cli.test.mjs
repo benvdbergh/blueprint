@@ -11,9 +11,11 @@ import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const BIN = join(ROOT, "bin/blueprint.mjs");
 
+// Child processes must not see the CI runner's GitHub variables (annotations, base ref, step summary).
+const ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("GITHUB_") && k !== "GOVERNANCE_ENFORCEMENT"));
 const tmp = () => mkdtempSync(join(tmpdir(), "blueprint-test-"));
 const run = (dir, ...args) => {
-  const res = spawnSync(process.execPath, [BIN, "init", dir, "--yes", ...args], { encoding: "utf8" });
+  const res = spawnSync(process.execPath, [BIN, "init", dir, "--yes", ...args], { encoding: "utf8", env: ENV });
   assert.equal(res.status, 0, res.stderr + res.stdout);
   return res.stdout;
 };
@@ -37,8 +39,8 @@ test("empty folder: full install in enforce mode with the default provider", () 
 test("the installed governance checks run green in the new folder", () => {
   const dir = tmp();
   run(dir);
-  execFileSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8" });
-  execFileSync(process.execPath, ["scripts/governance/trace.mjs"], { cwd: dir, encoding: "utf8" });
+  execFileSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env: ENV });
+  execFileSync(process.execPath, ["scripts/governance/trace.mjs"], { cwd: dir, encoding: "utf8", env: ENV });
 });
 
 test("existing repo: nothing of the app's is overwritten; instruction files get a marked block", () => {
@@ -138,7 +140,7 @@ test("codex is accepted and needs nothing beyond AGENTS.md; unknown providers fa
   const out = run(dir, "--providers", "codex");
   assert.match(out, /codex: OpenAI Codex reads AGENTS\.md directly/);
   assert.ok(!existsSync(join(dir, "CLAUDE.md")));
-  const bad = spawnSync(process.execPath, [BIN, "init", tmp(), "--yes", "--providers", "nope"], { encoding: "utf8" });
+  const bad = spawnSync(process.execPath, [BIN, "init", tmp(), "--yes", "--providers", "nope"], { encoding: "utf8", env: ENV });
   assert.equal(bad.status, 2);
   assert.match(bad.stderr, /unknown provider/);
 });
@@ -148,25 +150,24 @@ test("report mode: gate checks print but don't fail; guard checks still fail", (
   run(dir, "--mode", "report");
   // An approved-looking feature without acceptance criteria is a check-blueprint error.
   put(dir, "blueprint/features/FEAT-001-x.md", "---\nid: FEAT-001\ntitle: X\nstatus: approved\nowner: me\n---\n\n## Acceptance criteria\n");
-  const res = spawnSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8" });
+  const res = spawnSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env: ENV });
   assert.equal(res.status, 0, res.stdout);
   assert.match(res.stdout, /WOULD FAIL[\s\S]*report mode: not failing/);
-  const enforced = spawnSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env: { ...process.env, GOVERNANCE_ENFORCEMENT: "enforce" } });
+  const enforced = spawnSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env: { ...ENV, GOVERNANCE_ENFORCEMENT: "enforce" } });
   assert.equal(enforced.status, 1);
 });
 
 test("in a pull request the mode comes from the base branch, so a PR can't switch its own gate off", () => {
   const dir = tmp();
   run(dir, "--mode", "enforce");
-  const git = (...a) => execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...a], { cwd: dir, encoding: "utf8" });
+  const git = (...a) => execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...a], { cwd: dir, encoding: "utf8", env: ENV });
   git("init", "-q", "-b", "main");
   git("add", "-A");
   git("commit", "-qm", "base");
   git("update-ref", "refs/remotes/origin/main", "HEAD");
   run(dir, "--mode", "report"); // the PR's change
   put(dir, "blueprint/features/FEAT-001-x.md", "---\nid: FEAT-001\ntitle: X\nstatus: approved\nowner: me\n---\n\n## Acceptance criteria\n");
-  const env = { ...process.env, GITHUB_BASE_REF: "main" };
-  delete env.GOVERNANCE_ENFORCEMENT;
+  const env = { ...ENV, GITHUB_BASE_REF: "main" };
   const res = spawnSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env });
   assert.equal(res.status, 1, res.stdout);
 });
