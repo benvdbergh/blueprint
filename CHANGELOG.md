@@ -4,10 +4,15 @@ All notable changes to the `product-blueprint` installer and the template it ins
 
 ## [Unreleased]
 
-## [0.1.1] - 2026-11-19
+## [0.1.3] - 2026-11-19
 
 ### Changed
 - First version published by the automated release workflow, with npm provenance. No changes to the installer or the template.
+- CONTRIBUTING: the npm trusted publisher must allow `npm publish` under *Allowed actions*.
+
+## [0.1.1] - 2026-11-19
+
+Tagged but not published to npm: the trusted publisher only allowed staged publishes. `v0.1.2` was tagged without a matching `package.json` version and was not published either.
 
 ## [0.1.0] - 2026-11-19
 
