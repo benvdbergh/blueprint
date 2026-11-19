@@ -4,6 +4,11 @@ All notable changes to the `product-blueprint` installer and the template it ins
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-19
+
+### Changed
+- First version published by the automated release workflow, with npm provenance. No changes to the installer or the template.
+
 ## [0.1.0] - 2026-11-19
 
 ### Added
