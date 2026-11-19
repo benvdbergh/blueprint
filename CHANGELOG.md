@@ -4,15 +4,18 @@ All notable changes to the `product-blueprint` installer and the template it ins
 
 ## [Unreleased]
 
-## [0.1.3] - 2026-11-19
+### Changed
+- Releases are started from the Actions tab (*Package · release* → *Run workflow*) instead of by pushing a tag. The workflow reads the version from `package.json`, publishes, and only then creates the tag and the GitHub release. It has a dry-run option.
+
+## [0.1.4] - 2026-11-19
 
 ### Changed
 - First version published by the automated release workflow, with npm provenance. No changes to the installer or the template.
 - CONTRIBUTING: the npm trusted publisher must allow `npm publish` under *Allowed actions*.
 
-## [0.1.1] - 2026-11-19
+## Not published: 0.1.1 – 0.1.3
 
-Tagged but not published to npm: the trusted publisher only allowed staged publishes. `v0.1.2` was tagged without a matching `package.json` version and was not published either.
+`v0.1.1` was refused by npm (the trusted publisher only allowed staged publishes). `v0.1.2` and `v0.1.3` were tagged on a commit whose `package.json` didn't match, so the release workflow stopped them.
 
 ## [0.1.0] - 2026-11-19
 
