@@ -15,6 +15,8 @@ Shared instructions for **every** contributor to this repository: Claude Code, C
 
 Start of every task: read `blueprint/00-product-core.md`, then **only** the blueprint documents relevant to the task. `governance/config.json` → `impactRules` tells you which documents relate to which code paths.
 
+If the blueprint documents are still unfilled templates (`status: draft`, placeholders like `<Term>`) while the repository already has code, the blueprint hasn't been onboarded yet. When your task is to set up the blueprint, follow [`governance/workflows/WF-00-onboarding.md`](governance/workflows/WF-00-onboarding.md). For any other task, mention to the person that onboarding is pending and carry on.
+
 ## 2. Non-negotiable rules
 
 1. **Git is the shared source of truth.** Do not keep plans, specs or decisions anywhere else (no tool-private notes, no Lovable-only knowledge). If it matters, it goes in the repo.
