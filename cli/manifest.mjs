@@ -34,6 +34,9 @@ export const CORE = [
   { path: "cli/gitignore.txt", target: ".gitignore", strategy: "lines" },
 ];
 
+// This repository's own CI for the installer. It lives next to the payload workflows but is never installed.
+export const EXCLUDE = [/^\.github\/workflows\/package-[^/]+\.yml$/];
+
 // Agent providers that need a file of their own on top of AGENTS.md.
 // Only tools whose instruction-file convention is documented and in use today are listed. Tools that read
 // AGENTS.md natively and need nothing else (OpenAI Codex, Copilot coding agent and CLI) are accepted as

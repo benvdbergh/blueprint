@@ -2,6 +2,28 @@
   "name": "product-blueprint",
   "version": "0.1.0",
   "description": "Installs the Product Engineering Blueprint (blueprint docs, governance checks, CI workflows, agent instructions) into an empty folder or an existing repository.",
+  "keywords": [
+    "ai-agents",
+    "agents-md",
+    "claude-code",
+    "cursor",
+    "github-copilot",
+    "governance",
+    "scaffold",
+    "cli",
+    "product-management",
+    "documentation-drift"
+  ],
+  "license": "MIT",
+  "author": "benvdbergh",
+  "homepage": "https://github.com/benvdbergh/blueprint#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benvdbergh/blueprint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/benvdbergh/blueprint/issues"
+  },
   "type": "module",
   "bin": {
     "blueprint": "bin/blueprint.mjs"
@@ -21,9 +43,14 @@
     "contracts/",
     "governance/",
     "scripts/",
-    "templates/"
+    "templates/",
+    "!.github/workflows/package-*.yml"
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

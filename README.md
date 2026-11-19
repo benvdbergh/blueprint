@@ -1,6 +1,16 @@
-# Product Engineering Blueprint: template
+# Product Engineering Blueprint
+
+[![npm](https://img.shields.io/npm/v/product-blueprint)](https://www.npmjs.com/package/product-blueprint)
+[![installer tests](https://github.com/benvdbergh/blueprint/actions/workflows/package-ci.yml/badge.svg)](https://github.com/benvdbergh/blueprint/actions/workflows/package-ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 Product infrastructure for codebases that **humans and AI agents work on together without drifting apart**.
+
+```bash
+npx product-blueprint init            # in an empty folder or an existing repository
+```
+
+One command adds the blueprint documents, shared agent instructions (`AGENTS.md` plus `CLAUDE.md`, Copilot, Cursor, Gemini or Lovable files where those tools need them), deterministic drift checks and seven GitHub workflows. In an existing repository nothing of yours is overwritten, and the checks start in report-only mode. [Getting started](#getting-started) has the details.
 
 Lovable, Claude Code, Cursor and people are treated as interchangeable contributors. Three things they all share provide continuity:
 
@@ -43,6 +53,7 @@ scripts/
 .github/          the WF-01…07 workflows, PR template with impact table, issue forms, CODEOWNERS
 templates/        starters: OpenAPI, dependency-cruiser boundaries, visual tests, script contract
 bin/, cli/, test/ the `blueprint init` installer (not copied into projects)
+.github/workflows/package-*.yml   the installer's own CI and release (not copied into projects)
 ```
 
 ## The seven workflows
@@ -74,8 +85,10 @@ AI workflows never merge, never push to `main` and never edit `00-product-core.m
 The template installs with one command, in an empty folder or in an existing repository (Node ≥ 20):
 
 ```bash
-npx github:benvdbergh/blueprint init [dir] [--providers claude,cursor,copilot,gemini,lovable] [--mode report|enforce] [--owner @you]
+npx product-blueprint init [dir] [--providers claude,cursor,copilot,gemini,lovable] [--mode report|enforce] [--owner @you]
 ```
+
+Before the first npm release, or to try an unreleased version, run it straight from GitHub: `npx github:benvdbergh/blueprint init`.
 
 Without flags it asks which agent tools you use (detected from the repo where possible) and which mode to start in. `--yes` skips the questions, `--dry-run` shows the plan without writing anything.
 
@@ -117,7 +130,7 @@ In an existing repository the checks start in **report mode**: they show what wo
    ```
 4. Create the app (or connect Lovable). Add scripts from `templates/package-scripts.json` as they become real. Each added script becomes part of the gate.
 
-You can still use this repository as a GitHub template instead (**Use this template**). The `package.json`, `bin/`, `cli/` and `test/` folders belong to the installer; delete them in that case.
+You can still use this repository as a GitHub template instead (**Use this template**). In that case delete what belongs to the installer: `package.json`, `package-lock.json`, `bin/`, `cli/`, `test/`, `.github/workflows/package-*.yml`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md` and `LICENSE` (or keep the license notice).
 
 ### Lovable
 - Paste [`governance/agents/lovable-knowledge.md`](governance/agents/lovable-knowledge.md) into the project's Knowledge.
@@ -142,3 +155,7 @@ node scripts/governance/trace.mjs
 node scripts/governance/health-facts.mjs --out health-facts.json
 ```
 In Claude Code: `/impact-analysis`, `/wf01-define-feature <idea>`, `/wf03-architecture-review`, `/wf06-blueprint-sync <range>`, `/wf07-drift-audit`.
+
+## Contributing and license
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) for development and release steps, [SECURITY.md](SECURITY.md) to report a vulnerability, and [CHANGELOG.md](CHANGELOG.md) for what changed. Licensed under the [MIT License](LICENSE).
