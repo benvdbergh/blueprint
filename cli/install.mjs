@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  AGENTS_MD_ONLY, BLOCK_END, BLOCK_START, CORE, PROVIDERS, RECORD_FILE, SIDECAR_SUFFIX,
+  AGENTS_MD_ONLY, BLOCK_END, BLOCK_START, CORE, EXCLUDE, PROVIDERS, RECORD_FILE, SIDECAR_SUFFIX,
 } from "./manifest.mjs";
 
 export const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -19,6 +19,7 @@ const readText = (p) => readFileSync(p, "utf8");
 function listFiles(root, rel) {
   const abs = join(root, rel);
   if (!existsSync(abs)) return [];
+  if (EXCLUDE.some((re) => re.test(rel))) return [];
   if (!statSync(abs).isDirectory()) return [rel];
   return readdirSync(abs).sort().flatMap((name) => listFiles(root, posix(join(rel, name))));
 }

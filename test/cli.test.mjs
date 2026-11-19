@@ -34,6 +34,9 @@ test("empty folder: full install in enforce mode with the default provider", () 
   assert.ok(!existsSync(join(dir, ".cursor")), "cursor not selected");
   assert.ok(!existsSync(join(dir, "package.json")), "the scaffolder's own package.json is not installed");
   assert.ok(!existsSync(join(dir, "cli")) && !existsSync(join(dir, "bin")), "the CLI itself is not installed");
+  for (const f of [".github/workflows/package-ci.yml", ".github/workflows/package-release.yml", "LICENSE", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"]) {
+    assert.ok(!existsSync(join(dir, f)), `${f} belongs to this repository, not to projects`);
+  }
 });
 
 test("the installed governance checks run green in the new folder", () => {

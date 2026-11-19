@@ -1,0 +1,56 @@
+# Releases the `blueprint init` installer (steps: CONTRIBUTING.md#releasing). After a PR that bumps
+# package.json and CHANGELOG.md is merged, tag the merge commit, e.g.:
+#   git tag v0.2.0 && git push origin v0.2.0      (or "Draft a new release" on GitHub with a new tag)
+# Publishes to npm (trusted publishing via OIDC, or the NPM_TOKEN secret if set) and creates the GitHub release
+# with the matching CHANGELOG.md section as notes. Tags with a "-" (v0.2.0-rc.1) publish as a prerelease.
+# This file belongs to this repository only: the installer never copies .github/workflows/package-*.yml.
+name: "Package · release"
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: npm
+    permissions:
+      contents: write   # create the GitHub release
+      id-token: write   # npm trusted publishing + provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"; exit 1
+          fi
+      - run: npm test
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          case "$GITHUB_REF_NAME" in *-*) tag=next ;; *) tag=latest ;; esac
+          npm publish --tag "$tag"
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # The CHANGELOG.md section for this version becomes the release notes.
+          awk -v v="$version" '/^## /{p = ($0 ~ "^## \\[?" v "\\]?([ ]|$)")} p' CHANGELOG.md | tail -n +2 > notes.md
+          [ -s notes.md ] || echo "See CHANGELOG.md." > notes.md
+          case "$GITHUB_REF_NAME" in *-*) pre=--prerelease ;; *) pre= ;; esac
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --notes-file notes.md   # release was created in the GitHub UI
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md $pre
+          fi
