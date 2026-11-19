@@ -33,5 +33,5 @@ The [release workflow](.github/workflows/package-release.yml) checks that the ta
 ### One-time npm setup (maintainer)
 
 1. Publish the first version by hand from a clean checkout of the tagged commit: `npm login && npm publish`.
-2. On npmjs.com → the package → *Settings* → *Trusted publishing*, add GitHub Actions with repository `benvdbergh/blueprint`, workflow `package-release.yml` and environment `npm`. From then on the workflow publishes without a token.
+2. On npmjs.com → the package → *Settings* → *Trusted publishing*, add GitHub Actions with repository `benvdbergh/blueprint`, workflow `package-release.yml` and environment `npm`, and tick **npm publish** under *Allowed actions*. Entries created since September 2026 allow only `npm stage publish` by default, and a direct `npm publish` then fails with `403 OIDC permission denied for this action`. From then on the workflow publishes without a token.
 3. (Alternative to 2) add an npm automation token as the `NPM_TOKEN` repository secret.
