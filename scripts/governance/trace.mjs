@@ -10,7 +10,7 @@ import { writeFileSync } from "node:fs";
 import { Reporter, walk, read, matchesAny, arg } from "./lib.mjs";
 import { loadModel } from "./model.mjs";
 
-const r = new Reporter("Requirements ↔ tests traceability (trace)");
+const r = new Reporter("Requirements ↔ tests traceability (trace)", { gate: true });
 const model = loadModel();
 const t = model.config.traceability;
 

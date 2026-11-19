@@ -99,10 +99,30 @@ export function githubEvent() {
   return JSON.parse(readFileSync(p, "utf8"));
 }
 
+// ---------- enforcement mode ----------
+// governance/config.json `enforcement`: "enforce" (default) or "report". In report mode the gate checks
+// (Reporter with { gate: true }) print what would fail but exit 0, so an existing repository can adopt the
+// blueprint without every PR going red on day one. In a pull request the mode is read from the BASE branch,
+// so a PR can't switch its own gate off. GOVERNANCE_ENFORCEMENT overrides the config for one local run.
+export function enforcementMode() {
+  const env = process.env.GOVERNANCE_ENFORCEMENT;
+  if (env === "report" || env === "enforce") return env;
+  let config = null;
+  if (process.env.GITHUB_BASE_REF) {
+    const base = fileAtRef(`origin/${process.env.GITHUB_BASE_REF}`, "governance/config.json");
+    try { config = base ? JSON.parse(base) : null; } catch { config = null; }
+  }
+  try { config ??= loadConfig(); } catch { return "enforce"; }
+  return config.enforcement === "report" ? "report" : "enforce";
+}
+
 // ---------- reporting ----------
 export class Reporter {
-  constructor(name) {
+  // gate: true lets report mode downgrade errors. Leave it off for checks that must always hold
+  // (e.g. guard-paths on AI output, check-protected on approved specs).
+  constructor(name, { gate = false } = {}) {
     this.name = name;
+    this.reportOnly = gate && enforcementMode() === "report";
     this.errors = [];
     this.warnings = [];
     this.notes = [];
@@ -113,9 +133,9 @@ export class Reporter {
 
   markdown() {
     const lines = [`### ${this.name}`, ""];
-    const status = this.errors.length ? "❌ failed" : this.warnings.length ? "⚠️ passed with warnings" : "✅ passed";
+    const status = this.errors.length ? (this.reportOnly ? "📝 report-only: would fail" : "❌ failed") : this.warnings.length ? "⚠️ passed with warnings" : "✅ passed";
     lines.push(`**Result:** ${status} — ${this.errors.length} error(s), ${this.warnings.length} warning(s)`, "");
-    for (const e of this.errors) lines.push(`- ❌ ${e.file ? `\`${e.file}\`: ` : ""}${e.msg}`);
+    for (const e of this.errors) lines.push(`- ${this.reportOnly ? "📝" : "❌"} ${e.file ? `\`${e.file}\`: ` : ""}${e.msg}`);
     for (const w of this.warnings) lines.push(`- ⚠️ ${w.file ? `\`${w.file}\`: ` : ""}${w.msg}`);
     for (const n of this.notes) lines.push(`- ${n}`);
     return lines.join("\n") + "\n";
@@ -124,12 +144,14 @@ export class Reporter {
   // Prints GitHub annotations + step summary, exits non-zero on errors.
   finish({ exit = true } = {}) {
     const inCI = !!process.env.GITHUB_ACTIONS;
-    for (const e of this.errors) console.log(inCI ? `::error${e.file ? ` file=${e.file}` : ""}::${e.msg}` : `ERROR ${e.file ?? ""} ${e.msg}`);
+    const level = this.reportOnly ? "warning" : "error";
+    const prefix = this.reportOnly ? "[report-only, would fail] " : "";
+    for (const e of this.errors) console.log(inCI ? `::${level}${e.file ? ` file=${e.file}` : ""}::${prefix}${e.msg}` : `${this.reportOnly ? "WOULD FAIL" : "ERROR"} ${e.file ?? ""} ${e.msg}`);
     for (const w of this.warnings) console.log(inCI ? `::warning${w.file ? ` file=${w.file}` : ""}::${w.msg}` : `WARN  ${w.file ?? ""} ${w.msg}`);
     for (const n of this.notes) console.log(`NOTE  ${n}`);
     if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, this.markdown());
-    console.log(`${this.name}: ${this.errors.length} error(s), ${this.warnings.length} warning(s)`);
-    if (exit && this.errors.length) process.exit(1);
+    console.log(`${this.name}: ${this.errors.length} error(s), ${this.warnings.length} warning(s)${this.reportOnly && this.errors.length ? " (report mode: not failing)" : ""}`);
+    if (exit && this.errors.length && !this.reportOnly) process.exit(1);
   }
 }
 

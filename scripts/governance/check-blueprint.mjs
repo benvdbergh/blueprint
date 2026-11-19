@@ -7,7 +7,7 @@
 import { Reporter, walk, read } from "./lib.mjs";
 import { loadModel, DOC_STATUSES, FEATURE_STATUSES, ADR_STATUSES, DEVIATION_STATUSES } from "./model.mjs";
 
-const r = new Reporter("Blueprint structure (check-blueprint)");
+const r = new Reporter("Blueprint structure (check-blueprint)", { gate: true });
 const model = loadModel();
 
 const requireFields = (item, fields) => {

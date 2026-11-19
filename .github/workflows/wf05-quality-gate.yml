@@ -116,13 +116,29 @@ jobs:
     needs: [static, test, e2e, build, security]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: governance/config.json
+          sparse-checkout-cone-mode: false
       - name: Evaluate
         env:
           RESULTS: ${{ join(needs.*.result, ' ') }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           echo "Job results: $RESULTS"
+          # governance/config.json "enforcement": "report" lets a repository adopt the gate without blocking.
+          # In a PR the mode comes from the base branch, so a PR can't switch its own gate to report mode.
+          config=$(cat governance/config.json 2>/dev/null || echo '{}')
+          if [ -n "$BASE_SHA" ] && git fetch -q --depth=1 origin "$BASE_SHA" 2>/dev/null; then
+            base=$(git show "$BASE_SHA:governance/config.json" 2>/dev/null) && config="$base"
+          fi
+          MODE=$(printf '%s' "$config" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).enforcement||'enforce')}catch{console.log('enforce')}})")
+          echo "Enforcement mode: $MODE"
           for r in $RESULTS; do
             if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              if [ "$MODE" = "report" ]; then
+                echo "::warning::[report-only] The quality gate would fail. Set \"enforcement\": \"enforce\" in governance/config.json once it is green."; exit 0
+              fi
               echo "::error::Quality gate failed. Fix the failing checks; don't bypass them (AGENTS.md §4.6)."; exit 1
             fi
           done
