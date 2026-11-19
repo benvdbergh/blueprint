@@ -21,6 +21,7 @@ Lovable, Claude Code, Cursor and people are treated as interchangeable contribut
 AGENTS.md                      shared rules for all agents + humans (single source)
 CLAUDE.md                      → AGENTS.md (+ Claude Code commands)
 .cursor/rules/governance.mdc   → AGENTS.md
+.github/copilot-instructions.md → AGENTS.md (for Copilot surfaces that don't read AGENTS.md)
 blueprint/
   00-product-core.md … 07-roadmap.md   the eight blueprint documents
   features/   FEAT-nnn specs with acceptance criteria AC-nnn.n
@@ -41,6 +42,7 @@ scripts/
 .claude/commands/ the AI workflows as Claude Code commands (used locally and in CI)
 .github/          the WF-01…07 workflows, PR template with impact table, issue forms, CODEOWNERS
 templates/        starters: OpenAPI, dependency-cruiser boundaries, visual tests, script contract
+bin/, cli/, test/ the `blueprint init` installer (not copied into projects)
 ```
 
 ## The seven workflows
@@ -69,21 +71,53 @@ AI workflows never merge, never push to `main` and never edit `00-product-core.m
 
 ## Getting started
 
-### A. New project from this template
-1. **Use this template** on GitHub, or `gh repo create my-product --template <this-repo> --private --clone`.
-2. Fill in `blueprint/00-product-core.md` first, then 01 and 07. Leave the rest as `draft` until there is something to describe.
-3. Run the setup script (labels, branch protection; use `--reviews 0` if you work alone):
+The template installs with one command, in an empty folder or in an existing repository (Node ≥ 20):
+
+```bash
+npx github:benvdbergh/blueprint init [dir] [--providers claude,cursor,copilot,gemini,lovable] [--mode report|enforce] [--owner @you]
+```
+
+Without flags it asks which agent tools you use (detected from the repo where possible) and which mode to start in. `--yes` skips the questions, `--dry-run` shows the plan without writing anything.
+
+**Existing repositories are safe.** Nothing is overwritten:
+
+| What | When the file already exists |
+|---|---|
+| `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, PR template | Our content is appended between `<!-- blueprint:start -->` / `<!-- blueprint:end -->` markers. Re-runs replace only that block. |
+| `.gitignore` | Missing lines are appended. |
+| `.gemini/settings.json` | Keys are merged; existing values are kept. |
+| `blueprint/`, `contracts/`, `governance/config.json`, `CODEOWNERS` | Kept as they are (they're yours to edit). |
+| Scripts, workflows, workflow specs | Reported as a conflict and left alone. `--conflicts sidecar` writes our version next to it as `<file>.blueprint-new`. |
+
+In an existing repository the checks start in **report mode**: they show what would fail but never block a PR. Set `"enforcement": "enforce"` in `governance/config.json` when you're ready ([details](governance/README.md#enforcement-mode)). `governance/.blueprint-install.json` records what was installed, so running `init` again later upgrades every file you haven't changed.
+
+### Agent providers
+
+`AGENTS.md` is always installed. It's the open convention that OpenAI Codex, Cursor and GitHub Copilot's coding agent, CLI and VS Code chat read natively, so for those tools nothing else is needed. The providers below add a file only where a tool still needs one:
+
+| Provider | Adds | Why |
+|---|---|---|
+| `claude` (default) | `CLAUDE.md` with `@AGENTS.md` | Claude Code reads `AGENTS.md` only when there is no `CLAUDE.md`, and only from v2.1.277 (later on Bedrock/Vertex). The import works everywhere. |
+| `cursor` | `.cursor/rules/governance.mdc` | Optional: Cursor reads `AGENTS.md`; this adds an always-apply rule with the short version. |
+| `copilot` | `.github/copilot-instructions.md` | github.com Copilot chat and code review don't read `AGENTS.md`. |
+| `gemini` | `.gemini/settings.json` → `context.fileName` | Gemini CLI reads `GEMINI.md` unless told to read `AGENTS.md`. |
+| `lovable` | `governance/agents/lovable-knowledge.md` | Lovable takes instructions from its project Knowledge, not a repo file. Paste this text there. |
+
+`codex` is accepted but adds nothing. `.claude/commands/` is always installed because the AI workflows in CI run Claude Code with those files as prompts.
+
+### After installing
+1. Fill in `blueprint/00-product-core.md` first, then 01 and 07. Leave the rest as `draft` until there is something to describe.
+2. Run the setup script (labels, branch protection; use `--reviews 0` if you work alone):
    ```bash
    scripts/setup/configure-github.sh --codeowner @your-handle
    ```
-4. Add the Claude key for the AI workflows (deterministic checks work without it):
+3. Add the Claude key for the AI workflows (deterministic checks work without it):
    ```bash
    gh secret set ANTHROPIC_API_KEY
    ```
-5. Create the app (or connect Lovable). Add scripts from `templates/package-scripts.json` as they become real. Each added script becomes part of the gate.
+4. Create the app (or connect Lovable). Add scripts from `templates/package-scripts.json` as they become real. Each added script becomes part of the gate.
 
-### B. Existing repository (e.g. one Lovable created)
-Copy `AGENTS.md`, `CLAUDE.md`, `.cursor/`, `.claude/`, `.github/`, `blueprint/`, `governance/`, `scripts/`, `contracts/`, `templates/` and the `.gitignore` entries into the repo, open a PR, then follow steps 2–5. Merge your existing `.github/` or `.gitignore` content if you already have some.
+You can still use this repository as a GitHub template instead (**Use this template**). The `package.json`, `bin/`, `cli/` and `test/` folders belong to the installer; delete them in that case.
 
 ### Lovable
 - Paste [`governance/agents/lovable-knowledge.md`](governance/agents/lovable-knowledge.md) into the project's Knowledge.

@@ -113,6 +113,14 @@ CI calls these `package.json` scripts **if they exist**. Missing scripts are ski
 
 Every workflow can be enabled or disabled through repository variables (`WF0x_ENABLED=false`), so you can roll out one phase at a time.
 
+### Enforcement mode
+
+`governance/config.json` → `enforcement` is `enforce` (default) or `report`. In `report` mode the gate checks (`check-blueprint`, `check-impact`, `trace`, `terminology`) and the `quality-gate` job print what *would* fail as warnings and pass. `blueprint init` sets `report` when it installs into an existing repository, so the team sees the findings before they block anything. Switch to `enforce` in a PR once the findings are addressed.
+
+- In a pull request the mode is read from the **base** branch, so a PR can't switch its own gate to `report`.
+- `check-protected` (approved specs, 00 Product Core) and `guard-paths` (AI workflow output) always enforce: there is nothing to adopt gradually there.
+- `GOVERNANCE_ENFORCEMENT=report|enforce` overrides the config for a single local run.
+
 ---
 
 ## 6. Product Engineering Health Report

@@ -1,5 +1,6 @@
 {
   "$comment": "Single machine-readable source for governance rules. Read by scripts/governance/*.mjs and by AI workflows. Human explanation: governance/README.md.",
+  "enforcement": "enforce",
   "documents": {
     "00": { "file": "blueprint/00-product-core.md", "title": "Product Core", "authority": "Product owner", "aiWorkflows": ["WF-01"], "alwaysProtected": true },
     "01": { "file": "blueprint/01-product.md", "title": "Product", "authority": "Product management", "aiWorkflows": ["WF-01", "WF-06"] },

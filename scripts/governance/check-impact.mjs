@@ -12,7 +12,7 @@
 import { readFileSync, appendFileSync } from "node:fs";
 import { Reporter, loadConfig, githubEvent, changedFiles, matchesAny, arg } from "./lib.mjs";
 
-const r = new Reporter("Blueprint impact analysis (check-impact)");
+const r = new Reporter("Blueprint impact analysis (check-impact)", { gate: true });
 const config = loadConfig();
 const event = githubEvent();
 const pr = event?.pull_request;

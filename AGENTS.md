@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Shared instructions for **every** contributor to this repository: Claude Code, Cursor, Lovable, other agents, and humans. This is the only instruction file. Tool-specific files (`CLAUDE.md`, `.cursor/rules/`, Lovable project knowledge) point here and add nothing that contradicts it.
+Shared instructions for **every** contributor to this repository: Claude Code, Cursor, Lovable, other agents, and humans. This is the only instruction file. Tool-specific files (`CLAUDE.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, `.gemini/settings.json`, Lovable project knowledge) point here and add nothing that contradicts it.
 
 ## 1. How this repository works
 

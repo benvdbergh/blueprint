@@ -7,7 +7,7 @@ import { writeFileSync } from "node:fs";
 import { Reporter, walk, read, matchesAny, arg } from "./lib.mjs";
 import { loadModel, loadGlossary } from "./model.mjs";
 
-const r = new Reporter("Terminology (terminology)");
+const r = new Reporter("Terminology (terminology)", { gate: true });
 const model = loadModel();
 const glossary = loadGlossary(model);
 const { scanGlobs, ignoreGlobs } = model.config.terminology;
