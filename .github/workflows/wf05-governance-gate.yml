@@ -1,0 +1,52 @@
+# WF-05 · governance half of the hard gate: blueprint structure, protected specs, impact analysis,
+# traceability and terminology. Required status check: "governance-gate".
+# Runs on PR edits and label changes too, because the impact table lives in the PR body and
+# approvals are expressed as labels.
+name: "WF-05 · Governance gate"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: wf05-governance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  governance-gate:
+    name: governance-gate
+    if: vars.WF05_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Blueprint structure
+        run: node scripts/governance/check-blueprint.mjs
+      - name: Protected specifications
+        if: always()
+        run: node scripts/governance/check-protected.mjs
+      - name: Impact analysis
+        if: always()
+        id: impact
+        run: node scripts/governance/check-impact.mjs
+      - name: Requirements ↔ tests traceability
+        if: always()
+        run: node scripts/governance/trace.mjs
+      - name: Terminology
+        if: always()
+        run: node scripts/governance/terminology.mjs
+      - name: Triggered workflows
+        if: always() && steps.impact.outputs.workflows != ''
+        run: echo "::notice::This change is relevant to ${{ steps.impact.outputs.workflows }}"

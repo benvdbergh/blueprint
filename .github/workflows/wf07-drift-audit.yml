@@ -1,0 +1,125 @@
+# WF-07 · Product & Engineering Drift Audit — weekly Product Engineering Health Report.
+# Deterministic facts first, AI audit second. Read-only on the repository: the report is
+# published as an issue (label `health-report`) and the raw facts as a workflow artifact.
+name: "WF-07 · Drift audit"
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+    inputs:
+      window:
+        description: Activity window for the facts (git --since syntax)
+        default: 7 days ago
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+concurrency:
+  group: wf07-drift-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: vars.WF07_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      WINDOW: ${{ inputs.window || '7 days ago' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 1 · Deterministic facts
+        run: |
+          mkdir -p .governance-out
+          node scripts/governance/health-facts.mjs --out .governance-out/health-facts.json --since "$WINDOW"
+
+      - name: 2 · Context (previous report, gate status on main)
+        run: |
+          gh issue list --label health-report --state all --limit 1 --json number,title,body \
+            --jq '.[0] | "# Previous report: \(.title) (#\(.number))\n\n\(.body)"' > .governance-out/previous-report.md 2>/dev/null || true
+          gh run list --workflow wf05-quality-gate.yml --branch main --limit 1 --json conclusion,url,headSha,createdAt \
+            > .governance-out/wf05-main.json 2>/dev/null || echo '[]' > .governance-out/wf05-main.json
+          gh run list --workflow wf05-governance-gate.yml --branch main --limit 1 --json conclusion,url,headSha,createdAt \
+            > .governance-out/wf05-governance-main.json 2>/dev/null || echo '[]' > .governance-out/wf05-governance-main.json
+
+      - id: precheck
+        uses: ./.github/actions/ai-precheck
+        with:
+          workflow: WF-07
+          enabled-var: ${{ vars.WF07_ENABLED }}
+          api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: 3 · Claude · drift audit
+        if: steps.precheck.outputs.run == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Follow the instructions in `.claude/commands/wf07-drift-audit.md` exactly.
+            Facts: `.governance-out/health-facts.json`
+            Previous report: `.governance-out/previous-report.md` (may be empty)
+            Latest WF-05 results on main: `.governance-out/wf05-main.json`, `.governance-out/wf05-governance-main.json`
+            Report date: today (UTC). Commit: ${{ github.sha }}. Window: ${{ env.WINDOW }}.
+
+            CI context: write the report to `.governance-out/health-report.md` (not the repository root).
+            Edit no other files. A guard step fails the run if any tracked file changes.
+          claude_args: >-
+            --max-turns 80
+            --allowedTools "Read,Glob,Grep,Write,Bash(git log:*),Bash(git ls-files:*),Bash(git show:*),Bash(node scripts/governance/*)"
+            ${{ vars.CLAUDE_MODEL && format('--model {0}', vars.CLAUDE_MODEL) || '' }}
+
+      - name: Guard · audit is read-only
+        run: node scripts/governance/guard-paths.mjs --none
+
+      - name: Fallback report (facts only)
+        if: steps.precheck.outputs.run != 'true' || hashFiles('.governance-out/health-report.md') == ''
+        run: |
+          node -e '
+            const f = require("./.governance-out/health-facts.json");
+            const c = f.checks, s = (x) => x.passed ? (x.warnings.length ? "🟡" : "🟢") : "🔴";
+            const lines = [
+              `# Product Engineering Health Report — ${f.generated_at.slice(0,10)} (facts only)`, "",
+              "_AI audit did not run (not configured or no output). Deterministic checks only._", "",
+              "| Check | Status | Errors | Warnings |", "|---|---|---|---|",
+              ...Object.entries(c).map(([k,v]) => `| ${k} | ${s(v)} | ${v.errors.length} | ${v.warnings.length} |`), "",
+              `Features by status: \`${JSON.stringify(f.features.by_status)}\``,
+              `Acceptance criteria covered by tests: ${f.traceability?.coverage?.covered ?? 0}/${f.traceability?.coverage?.total ?? 0}`,
+              `Open deviations: ${f.deviations.open.length} · Unresolved ADRs: ${f.adrs.unresolved.length}`,
+              `Stale documents (>90 days): ${f.documents.filter(d => d.days_since_review > 90).map(d => d.key).join(", ") || "none"}`, "",
+              ...[...c.blueprint.errors, ...c.traceability.errors].map(e => `- 🔴 ${e}`),
+              ...[...c.blueprint.warnings, ...c.traceability.warnings, ...c.terminology.warnings].slice(0, 50).map(w => `- 🟡 ${w}`),
+            ];
+            require("fs").writeFileSync(".governance-out/health-report.md", lines.join("\n") + "\n");'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: health-report-${{ github.run_id }}
+          path: .governance-out/
+          retention-days: 90
+
+      - name: 4 · Publish report issue
+        run: |
+          gh label create health-report --color 0E8A16 --description "WF-07 Product Engineering Health Report" 2>/dev/null || true
+          date=$(date -u +%F)
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          body=.governance-out/issue-body.md
+          # GitHub issue bodies are limited to 65536 characters.
+          head -c 60000 .governance-out/health-report.md > "$body"
+          [ "$(wc -c < .governance-out/health-report.md)" -gt 60000 ] && printf '\n\n_Truncated: the full report is in the run artifact._\n' >> "$body"
+          printf '\n\n---\n<sub>Generated by WF-07 · [run + raw facts](%s)</sub>\n' "$run_url" >> "$body"
+          new=$(gh issue create --title "Product Engineering Health Report — $date" --label health-report --body-file "$body")
+          for n in $(gh issue list --label health-report --state open --json number,url --jq ".[] | select(.url != \"$new\") | .number"); do
+            gh issue close "$n" --comment "Superseded by $new"
+          done
+          echo "Report: $new" >> "$GITHUB_STEP_SUMMARY"

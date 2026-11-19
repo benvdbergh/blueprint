@@ -1,0 +1,37 @@
+# Replace the placeholder teams/users with real GitHub handles (e.g. @alice or @acme/product).
+# Combined with "Require review from Code Owners" this enforces the ownership model
+# in governance/README.md. A single-person project can put one handle everywhere.
+
+*                                   @OWNER
+
+# Product knowledge
+/blueprint/00-product-core.md       @OWNER
+/blueprint/01-product.md            @OWNER
+/blueprint/07-roadmap.md            @OWNER
+/blueprint/features/                @OWNER
+
+# UX
+/blueprint/02-ux-design.md          @OWNER
+/blueprint/prototypes/              @OWNER
+
+# Architecture & domain
+/blueprint/03-domain-data.md        @OWNER
+/blueprint/04-architecture.md       @OWNER
+/blueprint/decisions/               @OWNER
+/supabase/migrations/               @OWNER
+
+# Interfaces
+/blueprint/05-interfaces.md         @OWNER
+/contracts/                         @OWNER
+
+# Operations
+/blueprint/06-deployment.md         @OWNER
+
+# Governance itself: agents must not change their own rules
+/AGENTS.md                          @OWNER
+/CLAUDE.md                          @OWNER
+/governance/                        @OWNER
+/scripts/                           @OWNER
+/.github/                           @OWNER
+/.claude/                           @OWNER
+/.cursor/                           @OWNER

@@ -1,0 +1,13 @@
+{
+  "$comment": "Script contract used by CI (governance/README.md#4-script-contract). Adjust commands to your stack; delete what you don't use.",
+  "lint": "eslint . --max-warnings=0",
+  "typecheck": "tsc --noEmit -p tsconfig.app.json",
+  "test": "vitest run",
+  "test:integration": "vitest run --dir tests/integration",
+  "test:e2e": "playwright test tests/e2e",
+  "test:visual": "playwright test tests/visual",
+  "test:contract": "echo 'add contract tests (e.g. schemathesis, dredd)' && exit 1",
+  "build": "vite build",
+  "check:architecture": "depcruise src --config .dependency-cruiser.cjs",
+  "check:openapi": "echo 'regenerate contracts/openapi.yaml from code, then:' && git diff --exit-code contracts/"
+}
