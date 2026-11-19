@@ -30,11 +30,14 @@ if (arg("none")) {
   allow = [];
 } else if (wf) {
   // Documents whose aiWorkflows include this workflow + the workflow's supporting folders.
+  // WF-00 (onboarding) may fill every document except the always-protected ones, also in projects whose
+  // config.json predates WF-00.
   for (const d of Object.values(config.documents)) {
-    if (d.aiWorkflows.includes(wf) && !d.alwaysProtected) allow.push(d.file);
+    if ((d.aiWorkflows.includes(wf) || wf === "WF-00") && !d.alwaysProtected) allow.push(d.file);
     else deny.push(d.file);
   }
   const extra = {
+    "WF-00": ["blueprint/decisions/**", "governance/config.json", "AGENTS.md"],
     "WF-01": ["blueprint/features/**", "blueprint/prototypes/**"],
     "WF-02": ["blueprint/prototypes/**"],
     "WF-03": ["blueprint/decisions/**", "blueprint/deviations/**"],

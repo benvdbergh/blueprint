@@ -4,13 +4,18 @@ All notable changes to the `product-blueprint` installer and the template it ins
 
 ## [Unreleased]
 
-### Changed
-- Releases are started from the Actions tab (*Package · release* → *Run workflow*) instead of by pushing a tag. The workflow reads the version from `package.json`, publishes, and only then creates the tag and the GitHub release. It has a dry-run option.
+## [0.2.0] - 2026-11-20
+
+### Added
+- **WF-00 Onboarding** (`governance/workflows/WF-00-onboarding.md`, `/wf00-onboard` in Claude Code): after `init` in an existing repository, your own agent drafts blueprint documents 01–07 from the codebase, marks every claim as seen in code or inferred, sets them to `proposed`, points `impactRules` at the repo's real paths and opens one PR. 00 Product Core stays with the owner; the PR suggests a draft.
+- `init` in an existing repository now ends with the onboarding step. `AGENTS.md` tells agents that find unfilled templates in a repo with code that onboarding is pending.
+- `guard-paths.mjs --workflow WF-00` checks the onboarding output.
 
 ## [0.1.5] - 2026-11-20
 
 ### Changed
 - First manual release via GitHub Action screen using auto versioning in the workflow
+- Releases are started from the Actions tab (*Package · release* → *Run workflow*) instead of by pushing a tag. The workflow reads the version from `package.json`, publishes, and only then creates the tag and the GitHub release. It has a dry-run option.
 
 ## [0.1.4] - 2026-11-19
 

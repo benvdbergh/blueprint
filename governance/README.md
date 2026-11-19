@@ -35,13 +35,13 @@ Not every workflow may modify every document. Machine-readable version: [`config
 | Blueprint document | Primary authority | AI workflows allowed to propose |
 |---|---|---|
 | 00 Product Core | Product owner | WF-01 (as an **issue**, never a file edit) |
-| 01 Product | Product management | WF-01, WF-06 |
-| 02 UX & Design | UX / Product | WF-02, WF-06 |
-| 03 Domain & Data | Architecture | WF-03, WF-06 |
-| 04 Architecture | Architecture | WF-03, WF-06 |
-| 05 Interfaces | API / Engineering | WF-04, WF-06 |
-| 06 Deployment | Engineering / Operations | WF-03, WF-06 |
-| 07 Roadmap | Product management | WF-01, WF-06 |
+| 01 Product | Product management | WF-00, WF-01, WF-06 |
+| 02 UX & Design | UX / Product | WF-00, WF-02, WF-06 |
+| 03 Domain & Data | Architecture | WF-00, WF-03, WF-06 |
+| 04 Architecture | Architecture | WF-00, WF-03, WF-06 |
+| 05 Interfaces | API / Engineering | WF-00, WF-04, WF-06 |
+| 06 Deployment | Engineering / Operations | WF-00, WF-03, WF-06 |
+| 07 Roadmap | Product management | WF-00, WF-01, WF-06 |
 
 "Propose" means opening or updating a pull request (or an issue for 00). The authority reviews it. If the target document is `approved`, the authority also applies the `blueprint:approved-change` label. `.github/CODEOWNERS` maps each file to the people who hold the authority.
 
@@ -51,6 +51,7 @@ Not every workflow may modify every document. Machine-readable version: [`config
 
 | WF | Name | Trigger | Runtime | Gate? | Phase |
 |---|---|---|---|---|---|
+| [WF-00](workflows/WF-00-onboarding.md) | Onboarding (existing codebase) | Once, after `blueprint init` in an existing repo: "follow WF-00" or `/wf00-onboard` | The developer's own agent, locally | Human review of the onboarding PR | 1 |
 | [WF-01](workflows/WF-01-feature-definition.md) | Product & Feature Definition | Issue labelled `wf-01:define`; `/wf01-define-feature` interactively | Claude Code (Action or local) | Human approval of the draft PR | 2 |
 | [WF-02](workflows/WF-02-ux-sync.md) | UX & Design Synchronization | PR touching screens/components/tokens | Actions: Playwright visual tests; optional Claude review | Visual tests are required **once they exist** | 3 |
 | [WF-03](workflows/WF-03-architecture-integrity.md) | Architecture & Data Integrity | PR touching migrations, schema, deps, infra | Actions: impact rules + boundary check; Claude review comment | Impact rule (`require`) is gating; the AI review is advisory | 3 |

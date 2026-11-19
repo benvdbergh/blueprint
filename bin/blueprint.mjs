@@ -119,7 +119,7 @@ async function main() {
 
   if (o.dryRun) { console.log("\nDry run: nothing was written."); return; }
   apply(p, { providers, mode });
-  nextSteps({ t, by, providers, mode: mode ?? t.mode ?? "enforce", owner: o.owner, dir });
+  nextSteps({ t, by, providers, mode: mode ?? t.mode ?? "enforce", owner: o.owner, dir, existingRepo });
 }
 
 function report(by, notes) {
@@ -143,11 +143,16 @@ function report(by, notes) {
   for (const note of notes) console.log(`\nNote: ${note}`);
 }
 
-function nextSteps({ t, by, providers, mode, owner, dir }) {
+function nextSteps({ t, by, providers, mode, owner, dir, existingRepo }) {
   const steps = [];
   if (!t.isGit) steps.push(`git init (the governance checks compare branches with git)`);
-  steps.push("Fill in blueprint/00-product-core.md, then 01 and 07.");
-  steps.push(`Fill in the "Project specifics" section of AGENTS.md (stack, install, dev server).`);
+  if (existingRepo) {
+    steps.push(`Let your agent draft the blueprint from this codebase: ask it to "follow governance/workflows/WF-00-onboarding.md" (in Claude Code: /wf00-onboard). It also fills the "Project specifics" in AGENTS.md and opens one PR to review.`);
+    steps.push("Write blueprint/00-product-core.md yourself (the onboarding PR suggests a draft), then review and approve the other documents.");
+  } else {
+    steps.push("Fill in blueprint/00-product-core.md, then 01 and 07.");
+  }
+  if (!existingRepo) steps.push(`Fill in the "Project specifics" section of AGENTS.md (stack, install, dev server).`);
   const codeowners = by.create?.some((a) => a.path === ".github/CODEOWNERS");
   steps.push(`On GitHub: scripts/setup/configure-github.sh ${codeowners && !owner ? "--codeowner @your-handle " : ""}--reviews 0  (labels + branch protection; --reviews 0 for solo projects)`);
   steps.push("For the AI workflows: gh secret set ANTHROPIC_API_KEY");

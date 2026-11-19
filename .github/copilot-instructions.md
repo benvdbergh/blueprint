@@ -8,4 +8,5 @@ Short version:
 - Fill in the Blueprint impact table in every PR (`none | updated | proposed | deviation` per document 00–07).
 - Reference acceptance criteria IDs (`AC-nnn.n`) in tests. Record intentional differences as `blueprint/deviations/DEV-nnn-*.md`.
 - Never weaken lint rules, tests or CI checks to get a green build.
+- Blueprint still empty templates in a repo with code? Setting it up means following `governance/workflows/WF-00-onboarding.md`.
 - When reviewing a pull request, check that its Blueprint impact table matches the files it changes.

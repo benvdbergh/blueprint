@@ -1,6 +1,6 @@
 {
   "name": "product-blueprint",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Installs the Product Engineering Blueprint (blueprint docs, governance checks, CI workflows, agent instructions) into an empty folder or an existing repository.",
   "keywords": [
     "ai-agents",

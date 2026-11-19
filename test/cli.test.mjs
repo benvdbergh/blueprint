@@ -175,6 +175,36 @@ test("in a pull request the mode comes from the base branch, so a PR can't switc
   assert.equal(res.status, 1, res.stdout);
 });
 
+test("existing repo: init points to the onboarding step; an empty folder doesn't", () => {
+  const existing = tmp();
+  put(existing, "src/main.ts", "console.log('app')\n");
+  const out = run(existing, "--providers", "cursor");
+  assert.match(out, /governance\/workflows\/WF-00-onboarding\.md.*\/wf00-onboard/);
+  assert.ok(existsSync(join(existing, "governance/workflows/WF-00-onboarding.md")));
+  assert.ok(existsSync(join(existing, ".claude/commands/wf00-onboard.md")));
+  assert.doesNotMatch(run(tmp()), /WF-00/);
+});
+
+test("guard-paths --workflow WF-00 allows blueprint 01-07, ADRs, config and AGENTS.md, never 00 or code", () => {
+  const dir = tmp();
+  run(dir);
+  const git = (...a) => execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...a], { cwd: dir, encoding: "utf8", env: ENV });
+  git("init", "-q", "-b", "main");
+  git("add", "-A");
+  git("commit", "-qm", "base");
+  const guard = () => spawnSync(process.execPath, ["scripts/governance/guard-paths.mjs", "--workflow", "WF-00"], { cwd: dir, encoding: "utf8", env: ENV });
+  for (const f of ["blueprint/03-domain-data.md", "blueprint/07-roadmap.md", "AGENTS.md"]) put(dir, f, read(dir, f) + "\nx\n");
+  put(dir, "governance/config.json", read(dir, "governance/config.json").replace('"supabase/migrations/**"', '"db/schema/**"'));
+  put(dir, "blueprint/decisions/ADR-0001-x.md", "x\n");
+  assert.equal(guard().status, 0, guard().stdout);
+  put(dir, "blueprint/00-product-core.md", "changed\n");
+  put(dir, "src/app.ts", "x\n");
+  const res = guard();
+  assert.equal(res.status, 1);
+  assert.match(res.stdout, /00-product-core\.md/);
+  assert.match(res.stdout, /src\/app\.ts/);
+});
+
 test("the package's gitignore payload matches this repository's .gitignore", () => {
   assert.equal(readFileSync(join(ROOT, "cli/gitignore.txt"), "utf8"), readFileSync(join(ROOT, ".gitignore"), "utf8"));
 });

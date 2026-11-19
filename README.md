@@ -60,6 +60,7 @@ bin/, cli/, test/ the `blueprint init` installer (not copied into projects)
 
 | WF | Name | When | What |
 |---|---|---|---|
+| 00 | Onboarding | Once, after `init` in an existing repo | Your agent drafts the blueprint from the code and opens a PR ([below](#existing-codebase-let-your-agent-fill-the-blueprint)) |
 | 01 | Product & Feature Definition | Issue labelled `wf-01:define` | Claude drafts a `FEAT-nnn` spec and opens a **draft PR** for approval |
 | 02 | UX & Design Sync | PR touching UI | Playwright visual regression; optional AI UX review |
 | 03 | Architecture & Data Integrity | PR touching migrations, deps, infra | Gate: migrations require 03 impact. AI architecture review comment |
@@ -104,6 +105,16 @@ Without flags it asks which agent tools you use (detected from the repo where po
 
 In an existing repository the checks start in **report mode**: they show what would fail but never block a PR. Set `"enforcement": "enforce"` in `governance/config.json` when you're ready ([details](governance/README.md#enforcement-mode)). `governance/.blueprint-install.json` records what was installed, so running `init` again later upgrades every file you haven't changed.
 
+### Existing codebase: let your agent fill the blueprint
+
+`init` installs empty templates. The onboarding step (WF-00) has your own coding agent read the codebase and draft the blueprint from it: domain and data from migrations, architecture from the stack, interfaces from routes and functions, deployment from CI and hosting config, screens and capabilities from the UI. Everything is marked *seen in code* or *inferred*, set to `proposed`, and delivered as **one PR**. 00 Product Core stays yours: the PR suggests a draft, you write it.
+
+Tell your agent, in the repository:
+
+> Set up a product blueprint for this repo: run `npx product-blueprint init --yes`, then follow `governance/workflows/WF-00-onboarding.md` and open the PR.
+
+In Claude Code you can also run `/wf00-onboard` after `init`. Any agent that reads `AGENTS.md` (Codex, Cursor, Copilot, Claude Code, Gemini CLI with the `gemini` provider) can follow the same file.
+
 ### Agent providers
 
 `AGENTS.md` is always installed. It's the open convention that OpenAI Codex, Cursor and GitHub Copilot's coding agent, CLI and VS Code chat read natively, so for those tools nothing else is needed. The providers below add a file only where a tool still needs one:
@@ -119,7 +130,7 @@ In an existing repository the checks start in **report mode**: they show what wo
 `codex` is accepted but adds nothing. `.claude/commands/` is always installed because the AI workflows in CI run Claude Code with those files as prompts.
 
 ### After installing
-1. Fill in `blueprint/00-product-core.md` first, then 01 and 07. Leave the rest as `draft` until there is something to describe.
+1. Fill in `blueprint/00-product-core.md` first, then 01 and 07. In an existing repository, run the onboarding step first and review its PR. Leave the rest as `draft` until there is something to describe.
 2. Run the setup script (labels, branch protection; use `--reviews 0` if you work alone):
    ```bash
    scripts/setup/configure-github.sh --codeowner @your-handle

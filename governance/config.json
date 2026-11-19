@@ -3,13 +3,13 @@
   "enforcement": "enforce",
   "documents": {
     "00": { "file": "blueprint/00-product-core.md", "title": "Product Core", "authority": "Product owner", "aiWorkflows": ["WF-01"], "alwaysProtected": true },
-    "01": { "file": "blueprint/01-product.md", "title": "Product", "authority": "Product management", "aiWorkflows": ["WF-01", "WF-06"] },
-    "02": { "file": "blueprint/02-ux-design.md", "title": "UX & Design", "authority": "UX / Product", "aiWorkflows": ["WF-02", "WF-06"] },
-    "03": { "file": "blueprint/03-domain-data.md", "title": "Domain & Data", "authority": "Architecture", "aiWorkflows": ["WF-03", "WF-06"] },
-    "04": { "file": "blueprint/04-architecture.md", "title": "Architecture & Technology", "authority": "Architecture", "aiWorkflows": ["WF-03", "WF-06"] },
-    "05": { "file": "blueprint/05-interfaces.md", "title": "Interfaces & Integrations", "authority": "API / Engineering", "aiWorkflows": ["WF-04", "WF-06"] },
-    "06": { "file": "blueprint/06-deployment.md", "title": "Deployment & Operations", "authority": "Engineering / Operations", "aiWorkflows": ["WF-03", "WF-06"] },
-    "07": { "file": "blueprint/07-roadmap.md", "title": "Roadmap & Delivery", "authority": "Product management", "aiWorkflows": ["WF-01", "WF-06"] }
+    "01": { "file": "blueprint/01-product.md", "title": "Product", "authority": "Product management", "aiWorkflows": ["WF-00", "WF-01", "WF-06"] },
+    "02": { "file": "blueprint/02-ux-design.md", "title": "UX & Design", "authority": "UX / Product", "aiWorkflows": ["WF-00", "WF-02", "WF-06"] },
+    "03": { "file": "blueprint/03-domain-data.md", "title": "Domain & Data", "authority": "Architecture", "aiWorkflows": ["WF-00", "WF-03", "WF-06"] },
+    "04": { "file": "blueprint/04-architecture.md", "title": "Architecture & Technology", "authority": "Architecture", "aiWorkflows": ["WF-00", "WF-03", "WF-06"] },
+    "05": { "file": "blueprint/05-interfaces.md", "title": "Interfaces & Integrations", "authority": "API / Engineering", "aiWorkflows": ["WF-00", "WF-04", "WF-06"] },
+    "06": { "file": "blueprint/06-deployment.md", "title": "Deployment & Operations", "authority": "Engineering / Operations", "aiWorkflows": ["WF-00", "WF-03", "WF-06"] },
+    "07": { "file": "blueprint/07-roadmap.md", "title": "Roadmap & Delivery", "authority": "Product management", "aiWorkflows": ["WF-00", "WF-01", "WF-06"] }
   },
 
   "protection": {
