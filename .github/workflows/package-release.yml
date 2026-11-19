@@ -1,17 +1,33 @@
-# Releases the `blueprint init` installer (steps: CONTRIBUTING.md#releasing). After a PR that bumps
-# package.json and CHANGELOG.md is merged, tag the merge commit, e.g.:
-#   git tag v0.2.0 && git push origin v0.2.0      (or "Draft a new release" on GitHub with a new tag)
-# Publishes to npm (trusted publishing via OIDC, or the NPM_TOKEN secret if set) and creates the GitHub release
-# with the matching CHANGELOG.md section as notes. Tags with a "-" (v0.2.0-rc.1) publish as a prerelease.
+# Releases the `blueprint init` installer. Started by hand: Actions → "Package · release" → Run workflow
+# (on main). Steps: CONTRIBUTING.md#releasing.
+#
+# 1. Reads the version from package.json on the selected commit.
+# 2. Stops if tag v<version> already exists, if npm already has that version from another commit, or if
+#    CHANGELOG.md has no section for it.
+# 3. Runs the tests and publishes to npm (trusted publishing via OIDC, or the NPM_TOKEN secret if set).
+# 4. Only after a successful publish: creates tag v<version> on that commit and the GitHub release, with the
+#    version's CHANGELOG.md section as notes.
+# A version with a "-" (0.2.0-rc.1) publishes under the `next` dist-tag as a prerelease. "Dry run" does every
+# check and `npm publish --dry-run`, and creates nothing.
+# If a run publishes but fails before the release, run it again on the same commit: it skips the publish.
+# The file name and the `npm` environment are what npm's trusted publisher is configured with; keep them.
 # This file belongs to this repository only: the installer never copies .github/workflows/package-*.yml.
 name: "Package · release"
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Dry run: check and pack, but don't publish, tag or release"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+
+concurrency:
+  group: package-release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -19,38 +35,81 @@ jobs:
     timeout-minutes: 10
     environment: npm
     permissions:
-      contents: write   # create the GitHub release
+      contents: write   # create the tag and the GitHub release
       id-token: write   # npm trusted publishing + provenance
     steps:
+      - name: Only from the default branch
+        if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          echo "::error::Releases run from ${{ github.event.repository.default_branch }}, not ${GITHUB_REF_NAME}. Pick it under 'Use workflow from'."
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      - name: Tag matches package.json
-        run: |
-          version=$(node -p "require('./package.json').version")
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"; exit 1
-          fi
-      - run: npm test
-      - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          case "$GITHUB_REF_NAME" in *-*) tag=next ;; *) tag=latest ;; esac
-          npm publish --tag "$tag"
-      - name: GitHub release
+      - name: Version and pre-flight checks
+        id: v
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          # The CHANGELOG.md section for this version becomes the release notes.
-          awk -v v="$version" '/^## /{p = ($0 ~ "^## \\[?" v "\\]?([ ]|$)")} p' CHANGELOG.md | tail -n +2 > notes.md
-          [ -s notes.md ] || echo "See CHANGELOG.md." > notes.md
-          case "$GITHUB_REF_NAME" in *-*) pre=--prerelease ;; *) pre= ;; esac
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release edit "$GITHUB_REF_NAME" --notes-file notes.md   # release was created in the GitHub UI
-          else
-            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md $pre
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+          case "$version" in *-*) dist=next; pre=true ;; *) dist=latest; pre=false ;; esac
+          echo "Releasing $name@$version ($dist) from $GITHUB_SHA"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "::error::Tag $tag already exists. Bump the version in package.json (npm version <patch|minor|major> --no-git-tag-version) and CHANGELOG.md in a PR first."
+            exit 1
           fi
+
+          published=false
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            head=$(npm view "$name@$version" gitHead 2>/dev/null || true)
+            if [ "$head" != "$GITHUB_SHA" ]; then
+              echo "::error::$name@$version is already on npm (built from ${head:-an unknown commit}). Bump the version first."
+              exit 1
+            fi
+            echo "::notice::$name@$version is already on npm from this commit; skipping the publish and finishing the release."
+            published=true
+          fi
+
+          # The CHANGELOG.md section for this version becomes the release notes.
+          awk -v v="$version" '/^## /{p = ($0 ~ "^## \\[?" v "\\]?([ ]|$)")} p' CHANGELOG.md | tail -n +2 > "$RUNNER_TEMP/notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            echo "::error::CHANGELOG.md has no section for $version. Add '## [$version] - $(date -u +%F)' in the version bump PR."
+            exit 1
+          fi
+
+          {
+            echo "version=$version"
+            echo "tag=$tag"
+            echo "dist=$dist"
+            echo "prerelease=$pre"
+            echo "published=$published"
+          } >> "$GITHUB_OUTPUT"
+      - run: npm test
+      - name: Publish to npm
+        if: steps.v.outputs.published != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST: ${{ steps.v.outputs.dist }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            npm publish --tag "$DIST" --dry-run
+          else
+            npm publish --tag "$DIST"
+          fi
+      - name: Tag and GitHub release
+        if: ${{ !inputs.dry-run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+          PRERELEASE: ${{ steps.v.outputs.prerelease }}
+        run: |
+          pre=""; [ "$PRERELEASE" = "true" ] && pre="--prerelease"
+          # Creates the tag on the released commit as part of the release.
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" $pre
+          echo "::notice::Released $TAG: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"
