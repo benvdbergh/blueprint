@@ -4,6 +4,12 @@ All notable changes to the `product-blueprint` installer and the template it ins
 
 ## [Unreleased]
 
+### Changed
+- README: a section on running the workflows as Claude scheduled tasks (the prompt, the schedule, GitHub access).
+
+### Removed
+- This repository's pull-request CI (`.github/workflows/package-ci.yml`). Run `npm test` locally; the release workflow still runs the tests before publishing. Nothing changes for projects.
+
 ## [0.3.0] - 2026-11-20
 
 The workflows are now plain instructions for agents instead of GitHub Actions. A project gets the blueprint documents, `AGENTS.md` and five instruction files, and nothing to maintain besides them. Point an agent at an instruction file on demand, or from a scheduled task (for example a Claude Code scheduled task with the prompt "Follow `blueprint/workflows/sync.md`").

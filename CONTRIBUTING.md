@@ -12,14 +12,15 @@ The repository follows its own rules: read [`AGENTS.md`](AGENTS.md) first.
 Requirements: Node ≥ 20 and git. There are no dependencies to install.
 
 ```bash
-npm test                                          # installer tests (node:test)
+npm test                                          # installer tests (node:test); run before you open a PR
 node bin/blueprint.mjs init /tmp/try --dry-run    # try the installer locally
 ```
 
 - When you add a file to the template, add it to `cli/manifest.mjs` and decide how it behaves when the file already exists in a project (`managed`, `seed`, `block`, `json`).
 - Workflow instructions (`blueprint/workflows/*.md`) are prompts for agents running unattended. Keep each one short and start it with **Run**, **Changes** and **Ends with**, then the goal, the steps, how to decide, and what to report. A test checks the headers.
 - When you remove a file from the template, `upgrade` removes it from projects if they haven't edited it. Nothing else is needed.
-- Files in `.github/workflows/package-*.yml` are this repository's own CI and are never installed.
+- There is no CI on pull requests. Run `npm test` yourself; the release workflow runs it again before it publishes.
+- `.github/workflows/package-release.yml` is the only GitHub Action here. It publishes the package and is never installed into projects.
 - Add a line under `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) for anything a user would notice.
 
 ## Releasing
