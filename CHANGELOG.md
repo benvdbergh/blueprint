@@ -4,6 +4,10 @@ All notable changes to the `product-blueprint` installer and the template it ins
 
 ## [Unreleased]
 
+### Added
+- `blueprint/workflows/align.md`: a read-only pass that checks 01–07 against 00 Product Core and against each other, without reading the code, and ends with a rectification list (one sentence to change or delete per row, plus what needs a decision in 00). Run it on demand, and after a spec change that touches more than one of 01–07. `upgrade` adds it to existing projects.
+- Claude Code command `/blueprint-align`, pointing to it.
+
 ## [0.3.0] - 2026-11-20
 
 The workflows are now plain instructions for agents instead of GitHub Actions. A project gets the blueprint documents, `AGENTS.md` and five instruction files, and nothing to maintain besides them. Point an agent at an instruction file on demand, or from a scheduled task (for example a Claude Code scheduled task with the prompt "Follow `blueprint/workflows/sync.md`").
