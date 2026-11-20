@@ -1,5 +1,6 @@
 @AGENTS.md
 
 ## Claude Code specifics
-- Workflow commands live in `.claude/commands/`: `/wf00-onboard` (fill the blueprint from existing code, once), `/wf01-define-feature`, `/impact-analysis`, `/wf03-architecture-review`, `/wf06-blueprint-sync`, `/wf07-drift-audit`. The GitHub Actions run these same files, so local and CI behaviour match.
+- The workflows are also slash commands: `/blueprint-sync`, `/blueprint-audit`, `/blueprint-review`, `/blueprint-define-feature`, `/blueprint-onboard`. Each one only points to its file in `blueprint/workflows/`.
+- To run one on a schedule, create a scheduled task with the prompt "Follow `blueprint/workflows/<name>.md`".
 - Don't add instructions here that belong to every agent. Put them in `AGENTS.md`.

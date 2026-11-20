@@ -4,12 +4,11 @@ title: Product
 status: draft
 owner: Product management
 last_reviewed: 2026-11-19
-ai_workflows: [WF-01, WF-06]
 ---
 
 # 01 · Product
 
-> **Authority:** Product management. **AI policy:** WF-01 proposes new features; WF-06 proposes sync updates. Both go through a PR. Changing an `approved` version needs the `blueprint:approved-change` label.
+> **Authority:** Product management. **AI policy:** agents propose new features (`workflows/define-feature.md`) and sync updates (`workflows/sync.md`) through a PR. Requirements in an `approved` version change only with the owner's approval.
 > **Changes when:** features are added, changed or retired.
 
 This document is the **index of capabilities and behaviour**. Each feature is specified in detail in `blueprint/features/FEAT-nnn-*.md`. This document holds the overview, how features relate, and the product-wide rules no single feature owns.

@@ -1,9 +1,9 @@
-// Tests for `blueprint init` (bin/blueprint.mjs). Run: npm test
+// Tests for `blueprint init` and `blueprint upgrade` (bin/blueprint.mjs). Run: npm test
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,39 +11,53 @@ import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const BIN = join(ROOT, "bin/blueprint.mjs");
 
-// Child processes must not see the CI runner's GitHub variables (annotations, base ref, step summary).
-const ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("GITHUB_") && k !== "GOVERNANCE_ENFORCEMENT"));
+const ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith("GITHUB_")));
 const tmp = () => mkdtempSync(join(tmpdir(), "blueprint-test-"));
-const run = (dir, ...args) => {
-  const res = spawnSync(process.execPath, [BIN, "init", dir, "--yes", ...args], { encoding: "utf8", env: ENV });
+const bp = (cwd, ...args) => spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: "utf8", env: ENV });
+const cli = (cwd, ...args) => {
+  const res = bp(cwd, ...args);
   assert.equal(res.status, 0, res.stderr + res.stdout);
   return res.stdout;
 };
+const run = (dir, ...args) => cli(dir, "init", dir, "--yes", ...args);
+const upgrade = (dir, ...args) => cli(dir, "upgrade", dir, "--yes", ...args);
 const read = (dir, p) => readFileSync(join(dir, p), "utf8");
 const put = (dir, p, s) => { mkdirSync(join(dir, p, ".."), { recursive: true }); writeFileSync(join(dir, p), s); };
-const config = (dir) => JSON.parse(read(dir, "governance/config.json"));
+const sha = (s) => createHash("sha256").update(s).digest("hex");
+const record = (dir) => JSON.parse(read(dir, "blueprint/.install.json"));
 
-test("empty folder: full install in enforce mode with the default provider", () => {
+const WORKFLOWS = ["audit.md", "define-feature.md", "onboard.md", "review.md", "sync.md"];
+
+test("empty folder: AGENTS.md, the blueprint documents and the workflow instructions, nothing else", () => {
   const dir = tmp();
   run(dir);
-  for (const f of ["AGENTS.md", "CLAUDE.md", "blueprint/00-product-core.md", "governance/config.json", "scripts/governance/lib.mjs",
-    ".github/workflows/wf05-governance-gate.yml", ".claude/commands/impact-analysis.md", ".gitignore", "governance/.blueprint-install.json"]) {
-    assert.ok(existsSync(join(dir, f)), `${f} should exist`);
-  }
-  assert.equal(config(dir).enforcement, "enforce");
-  assert.ok(!existsSync(join(dir, ".cursor")), "cursor not selected");
-  assert.ok(!existsSync(join(dir, "package.json")), "the scaffolder's own package.json is not installed");
-  assert.ok(!existsSync(join(dir, "cli")) && !existsSync(join(dir, "bin")), "the CLI itself is not installed");
-  for (const f of [".github/workflows/package-ci.yml", ".github/workflows/package-release.yml", "LICENSE", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"]) {
-    assert.ok(!existsSync(join(dir, f)), `${f} belongs to this repository, not to projects`);
+  assert.deepEqual(readdirSync(dir).sort(), [".claude", "AGENTS.md", "CLAUDE.md", "blueprint"]);
+  assert.deepEqual(readdirSync(join(dir, "blueprint/workflows")).sort(), WORKFLOWS);
+  for (const f of ["00-product-core.md", "07-roadmap.md", "README.md", ".install.json"]) assert.ok(existsSync(join(dir, "blueprint", f)), f);
+  assert.deepEqual(readdirSync(join(dir, ".claude/commands")).sort(), WORKFLOWS.map((w) => `blueprint-${w}`));
+  for (const f of ["package.json", "bin", "cli", "test", ".github", "scripts", "governance", "LICENSE", "CHANGELOG.md"]) {
+    assert.ok(!existsSync(join(dir, f)), `${f} belongs to this package, not to projects`);
   }
 });
 
-test("the installed governance checks run green in the new folder", () => {
+test("the instructions only point at files that exist in a project", () => {
   const dir = tmp();
-  run(dir);
-  execFileSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env: ENV });
-  execFileSync(process.execPath, ["scripts/governance/trace.mjs"], { cwd: dir, encoding: "utf8", env: ENV });
+  run(dir, "--providers", "claude,cursor,copilot");
+  const texts = ["AGENTS.md", "CLAUDE.md", ".cursor/rules/blueprint.mdc", ".github/copilot-instructions.md", "blueprint/README.md",
+    ...WORKFLOWS.map((w) => `blueprint/workflows/${w}`), ...readdirSync(join(dir, ".claude/commands")).map((f) => `.claude/commands/${f}`)];
+  for (const f of texts) {
+    const text = read(dir, f);
+    assert.doesNotMatch(text, /scripts\/|governance\/|\.github\/workflows\/wf|npx product-blueprint@|_TEMPLATE\.md|\bWF-0\d\b/, `${f} refers to something that no longer exists`);
+    for (const [, path] of text.matchAll(/`(blueprint\/workflows\/[\w-]+\.md)`/g)) assert.ok(existsSync(join(dir, path)), `${f} → ${path}`);
+  }
+});
+
+test("workflow instructions say when they run, what they may change and how they end", () => {
+  for (const w of WORKFLOWS) {
+    const text = readFileSync(join(ROOT, "blueprint/workflows", w), "utf8");
+    assert.match(text, /^# /, w);
+    for (const part of ["**Run:**", "**Changes:**", "**Ends with:**", "## Goal"]) assert.ok(text.includes(part), `${w} has ${part}`);
+  }
 });
 
 test("existing repo: nothing of the app's is overwritten; instruction files get a marked block", () => {
@@ -51,31 +65,22 @@ test("existing repo: nothing of the app's is overwritten; instruction files get 
   put(dir, "package.json", JSON.stringify({ name: "app", devDependencies: { "lovable-tagger": "1.0.0" } }));
   put(dir, "src/main.ts", "console.log('app')\n");
   put(dir, "AGENTS.md", "# My app\n\nUse pnpm.\n");
-  put(dir, ".gitignore", "node_modules\n.env\n");
-  put(dir, ".github/workflows/wf05-quality-gate.yml", "name: mine\n");
-  put(dir, ".github/pull_request_template.md", "## Summary\n");
+  put(dir, "blueprint/workflows/sync.md", "my own sync\n");
 
   const out = run(dir, "--providers", "claude,copilot,gemini,lovable");
   assert.match(out, /Existing repository/);
   assert.equal(read(dir, "package.json"), JSON.stringify({ name: "app", devDependencies: { "lovable-tagger": "1.0.0" } }));
   assert.equal(read(dir, "src/main.ts"), "console.log('app')\n");
-  assert.equal(read(dir, ".github/workflows/wf05-quality-gate.yml"), "name: mine\n", "conflict is left alone");
-  assert.match(out, /Conflicts, left as they are[\s\S]*wf05-quality-gate\.yml/);
+  assert.equal(read(dir, "blueprint/workflows/sync.md"), "my own sync\n", "conflict is left alone");
+  assert.match(out, /Conflicts, left as they are[\s\S]*blueprint\/workflows\/sync\.md/);
 
   const agents = read(dir, "AGENTS.md");
   assert.ok(agents.startsWith("# My app\n\nUse pnpm.\n"), "own content kept on top");
-  assert.match(agents, /<!-- blueprint:start[\s\S]*Non-negotiable rules[\s\S]*<!-- blueprint:end -->/);
-  assert.match(read(dir, ".github/pull_request_template.md"), /^## Summary[\s\S]*\| 00 Product Core \| none \|/);
-
-  const gi = read(dir, ".gitignore");
-  assert.ok(gi.startsWith("node_modules\n.env\n"));
-  assert.match(gi, /\.governance-out\//);
-  assert.equal(gi.match(/^node_modules\/?$/gm).length, 1, "no duplicate lines (node_modules and node_modules/ are the same)");
-
-  assert.equal(config(dir).enforcement, "report", "existing repo defaults to report mode");
+  assert.match(agents, /<!-- blueprint:start[\s\S]*## Rules[\s\S]*<!-- blueprint:end -->/);
   assert.ok(existsSync(join(dir, ".github/copilot-instructions.md")));
-  assert.ok(existsSync(join(dir, "governance/agents/lovable-knowledge.md")));
   assert.deepEqual(JSON.parse(read(dir, ".gemini/settings.json")), { context: { fileName: ["AGENTS.md", "GEMINI.md"] } });
+  assert.match(out, /Paste this into Lovable[\s\S]*blueprint\/03-domain-data\.md/);
+  assert.match(out, /follow blueprint\/workflows\/onboard\.md.*\/blueprint-onboard/);
 });
 
 test("re-running is idempotent and keeps edited files", () => {
@@ -85,50 +90,43 @@ test("re-running is idempotent and keeps edited files", () => {
   run(dir);
   const agents = read(dir, "AGENTS.md");
   put(dir, "blueprint/00-product-core.md", "my product core\n");
-  put(dir, "scripts/governance/trace.mjs", "// locally patched\n");
+  put(dir, "blueprint/workflows/audit.md", "# my audit\n");
 
   const out = run(dir);
   assert.match(out, /Already set up/);
   assert.equal(read(dir, "AGENTS.md"), agents, "block replaced in place, not appended twice");
-  assert.equal(read(dir, "blueprint/00-product-core.md"), "my product core\n", "seed files are never touched again");
-  assert.equal(read(dir, "scripts/governance/trace.mjs"), "// locally patched\n", "edited managed file is a conflict");
+  assert.equal(read(dir, "blueprint/00-product-core.md"), "my product core\n", "edited documents are never touched");
+  assert.equal(read(dir, "blueprint/workflows/audit.md"), "# my audit\n", "edited workflow is a conflict");
   assert.match(out, /create 0 /);
-  assert.equal(config(dir).enforcement, "report", "re-run keeps the mode");
 });
 
-test("re-run updates managed files that weren't edited since install", () => {
+test("upgrade refreshes files that weren't edited since they were installed, documents included", () => {
   const dir = tmp();
   run(dir);
-  const recordPath = join(dir, "governance/.blueprint-install.json");
-  const record = JSON.parse(readFileSync(recordPath, "utf8"));
-  // Simulate an older install: the file on disk matches what that older version wrote.
-  put(dir, "scripts/governance/trace.mjs", "// old version\n");
-  record.files["scripts/governance/trace.mjs"] = createHash("sha256").update("// old version\n").digest("hex");
-  writeFileSync(recordPath, JSON.stringify(record));
-  const out = run(dir);
-  assert.match(out, /Updated \(unchanged since the last install\)[\s\S]*scripts\/governance\/trace\.mjs/);
-  assert.equal(read(dir, "scripts/governance/trace.mjs"), readFileSync(join(ROOT, "scripts/governance/trace.mjs"), "utf8"));
+  const r = record(dir);
+  for (const f of ["blueprint/workflows/sync.md", "blueprint/03-domain-data.md"]) {
+    put(dir, f, "# old version\n");
+    r.files[f] = sha("# old version\n");
+  }
+  writeFileSync(join(dir, "blueprint/.install.json"), JSON.stringify(r));
+  const out = upgrade(dir);
+  assert.match(out, /Updated \(unchanged since the last install\)[\s\S]*blueprint\/03-domain-data\.md[\s\S]*sync\.md/);
+  assert.equal(read(dir, "blueprint/workflows/sync.md"), readFileSync(join(ROOT, "blueprint/workflows/sync.md"), "utf8"));
+  assert.equal(read(dir, "blueprint/03-domain-data.md"), readFileSync(join(ROOT, "blueprint/03-domain-data.md"), "utf8"));
 });
 
 test("--conflicts sidecar writes our version next to the conflicting file", () => {
   const dir = tmp();
-  put(dir, ".github/ISSUE_TEMPLATE/config.yml", "blank_issues_enabled: false\n");
+  put(dir, "blueprint/workflows/review.md", "mine\n");
   run(dir, "--conflicts", "sidecar");
-  assert.equal(read(dir, ".github/ISSUE_TEMPLATE/config.yml"), "blank_issues_enabled: false\n");
-  assert.equal(read(dir, ".github/ISSUE_TEMPLATE/config.yml.blueprint-new"), readFileSync(join(ROOT, ".github/ISSUE_TEMPLATE/config.yml"), "utf8"));
+  assert.equal(read(dir, "blueprint/workflows/review.md"), "mine\n");
+  assert.equal(read(dir, "blueprint/workflows/review.md.blueprint-new"), readFileSync(join(ROOT, "blueprint/workflows/review.md"), "utf8"));
 });
 
-test("--mode, --owner and --dry-run", () => {
+test("--dry-run writes nothing", () => {
   const dir = tmp();
-  const out = run(dir, "--dry-run");
-  assert.match(out, /Dry run/);
-  assert.ok(!existsSync(join(dir, "AGENTS.md")));
-
-  run(dir, "--owner", "@ben");
-  assert.doesNotMatch(read(dir, ".github/CODEOWNERS"), /@OWNER/);
-  assert.match(read(dir, ".github/CODEOWNERS"), /^\*\s+@ben$/m);
-  run(dir, "--mode", "report");
-  assert.equal(config(dir).enforcement, "report");
+  assert.match(run(dir, "--dry-run"), /Dry run/);
+  assert.deepEqual(readdirSync(dir), []);
 });
 
 test("gemini settings merge keeps existing keys and file names", () => {
@@ -138,73 +136,83 @@ test("gemini settings merge keeps existing keys and file names", () => {
   assert.deepEqual(JSON.parse(read(dir, ".gemini/settings.json")), { theme: "dark", context: { fileName: ["CONTEXT.md", "AGENTS.md", "GEMINI.md"] } });
 });
 
-test("codex is accepted and needs nothing beyond AGENTS.md; unknown providers fail", () => {
+test("codex is accepted and needs nothing beyond AGENTS.md; unknown providers and old options fail", () => {
   const dir = tmp();
   const out = run(dir, "--providers", "codex");
   assert.match(out, /codex: OpenAI Codex reads AGENTS\.md directly/);
   assert.ok(!existsSync(join(dir, "CLAUDE.md")));
-  const bad = spawnSync(process.execPath, [BIN, "init", tmp(), "--yes", "--providers", "nope"], { encoding: "utf8", env: ENV });
+  const bad = bp(tmp(), "init", ".", "--yes", "--providers", "nope");
   assert.equal(bad.status, 2);
   assert.match(bad.stderr, /unknown provider/);
+  assert.equal(bp(tmp(), "init", ".", "--yes", "--mode", "report").status, 2);
+  assert.equal(bp(tmp(), "check").status, 2, "the check commands are gone");
 });
 
-test("report mode: gate checks print but don't fail; guard checks still fail", () => {
+// What 0.2 installed: Actions, scripts, templates, governance docs, the record in governance/.
+function legacySetup(dir) {
+  const files = {
+    ".github/workflows/wf05-governance-gate.yml": "run: node scripts/governance/check-blueprint.mjs\n",
+    ".github/workflows/wf06-blueprint-sync.yml": "name: WF-06\n",
+    ".github/actions/setup-project/action.yml": "run: node scripts/ci/run.mjs --detect\n",
+    ".github/pull_request_template.md": "## Blueprint impact\n",
+    ".github/CODEOWNERS": "* @ben\n",
+    ".gitignore": "node_modules/\n.env\n",
+    ".claude/commands/wf06-blueprint-sync.md": "old command\n",
+    ".cursor/rules/governance.mdc": "old rule\n",
+    "scripts/governance/lib.mjs": "// lib\n",
+    "scripts/ci/run.mjs": "// run\n",
+    "templates/openapi.yaml": "openapi: 3.1.0\n",
+    "contracts/README.md": "# Contracts\n",
+    "governance/README.md": "# Governance\n",
+    "governance/config.json": "{}\n",
+    "governance/workflows/WF-06-blueprint-sync.md": "# WF-06\n",
+    "blueprint/features/_TEMPLATE.md": "---\nid: FEAT-000\n---\n",
+    "blueprint/03-domain-data.md": "old 03 template\n",
+  };
+  for (const [f, text] of Object.entries(files)) put(dir, f, text);
+  put(dir, "blueprint/01-product.md", "our product, written by us\n");
+  put(dir, "AGENTS.md", "old agents\n");
+  const hashes = Object.fromEntries(Object.entries(files).map(([f, t]) => [f, sha(t)]));
+  hashes["blueprint/01-product.md"] = sha("01 as installed\n");
+  hashes["AGENTS.md"] = sha("old agents\n");
+  put(dir, "governance/.blueprint-install.json", JSON.stringify({ version: "0.2.0", providers: ["claude", "cursor"], installedAt: "2026-11-01", files: hashes }));
+}
+
+test("upgrade from 0.2 removes the Actions, scripts and templates it installed, and keeps what you edited", () => {
   const dir = tmp();
-  run(dir, "--mode", "report");
-  // An approved-looking feature without acceptance criteria is a check-blueprint error.
-  put(dir, "blueprint/features/FEAT-001-x.md", "---\nid: FEAT-001\ntitle: X\nstatus: approved\nowner: me\n---\n\n## Acceptance criteria\n");
-  const res = spawnSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env: ENV });
-  assert.equal(res.status, 0, res.stdout);
-  assert.match(res.stdout, /WOULD FAIL[\s\S]*report mode: not failing/);
-  const enforced = spawnSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env: { ...ENV, GOVERNANCE_ENFORCEMENT: "enforce" } });
-  assert.equal(enforced.status, 1);
+  legacySetup(dir);
+  put(dir, "templates/openapi.yaml", "openapi: 3.1.0\n# edited\n");
+
+  const initOut = run(dir);
+  assert.match(initOut, /from before 0\.3/);
+  assert.match(initOut, /run "blueprint upgrade" to remove them/);
+  assert.ok(existsSync(join(dir, "scripts/governance/lib.mjs")), "init never deletes");
+  assert.ok(existsSync(join(dir, "blueprint/.install.json")));
+
+  const out = upgrade(dir);
+  for (const f of [".github/workflows", ".github/actions", ".github/pull_request_template.md", "scripts", "contracts", "governance",
+    ".claude/commands/wf06-blueprint-sync.md", ".cursor/rules/governance.mdc", "blueprint/features"]) {
+    assert.ok(!existsSync(join(dir, f)), `${f} removed`);
+  }
+  assert.match(out, /kept[\s\S]*templates\/openapi\.yaml \(edited/);
+  assert.equal(read(dir, "templates/openapi.yaml"), "openapi: 3.1.0\n# edited\n");
+  assert.match(initOut, /left in place[\s\S]*\.github\/CODEOWNERS[\s\S]*\.gitignore/);
+  assert.equal(read(dir, ".gitignore"), "node_modules/\n.env\n", ".gitignore is never removed");
+  assert.equal(read(dir, ".github/CODEOWNERS"), "* @ben\n");
+  assert.equal(read(dir, "blueprint/01-product.md"), "our product, written by us\n", "filled documents stay");
+  assert.equal(read(dir, "blueprint/03-domain-data.md"), readFileSync(join(ROOT, "blueprint/03-domain-data.md"), "utf8"), "untouched template refreshed");
+  assert.match(read(dir, "AGENTS.md"), /blueprint\/workflows\/sync\.md/);
+  assert.ok(existsSync(join(dir, ".cursor/rules/blueprint.mdc")) && existsSync(join(dir, ".claude/commands/blueprint-sync.md")));
+  assert.deepEqual(Object.keys(record(dir).files).filter((f) => /^(scripts|governance|\.github)\//.test(f)), []);
+  assert.equal(bp(tmp(), "upgrade", "--yes").status, 2, "upgrade needs an existing setup");
 });
 
-test("in a pull request the mode comes from the base branch, so a PR can't switch its own gate off", () => {
+test("upgrade keeps the old scripts while a workflow you edited still calls them", () => {
   const dir = tmp();
-  run(dir, "--mode", "enforce");
-  const git = (...a) => execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...a], { cwd: dir, encoding: "utf8", env: ENV });
-  git("init", "-q", "-b", "main");
-  git("add", "-A");
-  git("commit", "-qm", "base");
-  git("update-ref", "refs/remotes/origin/main", "HEAD");
-  run(dir, "--mode", "report"); // the PR's change
-  put(dir, "blueprint/features/FEAT-001-x.md", "---\nid: FEAT-001\ntitle: X\nstatus: approved\nowner: me\n---\n\n## Acceptance criteria\n");
-  const env = { ...ENV, GITHUB_BASE_REF: "main" };
-  const res = spawnSync(process.execPath, ["scripts/governance/check-blueprint.mjs"], { cwd: dir, encoding: "utf8", env });
-  assert.equal(res.status, 1, res.stdout);
-});
-
-test("existing repo: init points to the onboarding step; an empty folder doesn't", () => {
-  const existing = tmp();
-  put(existing, "src/main.ts", "console.log('app')\n");
-  const out = run(existing, "--providers", "cursor");
-  assert.match(out, /governance\/workflows\/WF-00-onboarding\.md.*\/wf00-onboard/);
-  assert.ok(existsSync(join(existing, "governance/workflows/WF-00-onboarding.md")));
-  assert.ok(existsSync(join(existing, ".claude/commands/wf00-onboard.md")));
-  assert.doesNotMatch(run(tmp()), /WF-00/);
-});
-
-test("guard-paths --workflow WF-00 allows blueprint 01-07, ADRs, config and AGENTS.md, never 00 or code", () => {
-  const dir = tmp();
-  run(dir);
-  const git = (...a) => execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...a], { cwd: dir, encoding: "utf8", env: ENV });
-  git("init", "-q", "-b", "main");
-  git("add", "-A");
-  git("commit", "-qm", "base");
-  const guard = () => spawnSync(process.execPath, ["scripts/governance/guard-paths.mjs", "--workflow", "WF-00"], { cwd: dir, encoding: "utf8", env: ENV });
-  for (const f of ["blueprint/03-domain-data.md", "blueprint/07-roadmap.md", "AGENTS.md"]) put(dir, f, read(dir, f) + "\nx\n");
-  put(dir, "governance/config.json", read(dir, "governance/config.json").replace('"supabase/migrations/**"', '"db/schema/**"'));
-  put(dir, "blueprint/decisions/ADR-0001-x.md", "x\n");
-  assert.equal(guard().status, 0, guard().stdout);
-  put(dir, "blueprint/00-product-core.md", "changed\n");
-  put(dir, "src/app.ts", "x\n");
-  const res = guard();
-  assert.equal(res.status, 1);
-  assert.match(res.stdout, /00-product-core\.md/);
-  assert.match(res.stdout, /src\/app\.ts/);
-});
-
-test("the package's gitignore payload matches this repository's .gitignore", () => {
-  assert.equal(readFileSync(join(ROOT, "cli/gitignore.txt"), "utf8"), readFileSync(join(ROOT, ".gitignore"), "utf8"));
+  legacySetup(dir);
+  put(dir, ".github/workflows/wf05-governance-gate.yml", "# mine\nrun: node scripts/governance/check-blueprint.mjs\n");
+  const out = upgrade(dir);
+  assert.match(out, /scripts\/governance\/lib\.mjs \(still called from \.github\/workflows\/wf05-governance-gate\.yml\)/);
+  assert.ok(existsSync(join(dir, "scripts/governance/lib.mjs")));
+  assert.ok(!existsSync(join(dir, ".github/workflows/wf06-blueprint-sync.yml")), "unedited workflows still go");
 });

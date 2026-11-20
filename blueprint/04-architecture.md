@@ -4,12 +4,11 @@ title: Architecture & Technology
 status: draft
 owner: Architecture
 last_reviewed: 2026-11-19
-ai_workflows: [WF-03, WF-06]
 ---
 
 # 04 · Architecture & Technology
 
-> **Authority:** Architecture. **AI policy:** WF-03 and WF-06 propose updates via PR. Significant decisions get an ADR in `blueprint/decisions/`.
+> **Authority:** Architecture. **AI policy:** agents propose updates via PR (`workflows/sync.md`, `workflows/review.md`). Significant decisions get an ADR in `blueprint/decisions/`.
 > **Changes when:** structure, boundaries, technology or cross-cutting concerns change.
 
 ## System context
@@ -29,8 +28,8 @@ flowchart LR
 | Testing | <e.g. Vitest, Playwright> | |
 
 ## Module structure & boundaries
-<!-- The rules here should be machine-checked by `npm run check:architecture`
-     (see templates/dependency-cruiser.cjs). -->
+<!-- Keep this table current: the review and audit workflows check imports against it.
+     A tool such as dependency-cruiser can enforce it in CI if you want a hard check. -->
 | Module | Path | May depend on | Must not depend on |
 |---|---|---|---|
 | UI components | `src/components/` | `src/lib/` | `src/integrations/` directly |
@@ -44,7 +43,7 @@ flowchart LR
 - **Performance budgets:** <budgets>
 
 ## Security baseline
-- <e.g. RLS enabled on every table; service role only in server code; dependency scanning in WF-05>
+- <e.g. RLS enabled on every table; service role only in server code; dependency scanning in CI>
 
 ## Architecture decision log
 <!-- Index of ADRs. Status must match the ADR file. -->

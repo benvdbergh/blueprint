@@ -4,12 +4,11 @@ title: UX & Design
 status: draft
 owner: UX / Product
 last_reviewed: 2026-11-19
-ai_workflows: [WF-02, WF-06]
 ---
 
 # 02 · UX & Design
 
-> **Authority:** UX / Product. **AI policy:** WF-02 and WF-06 propose updates via PR. Intentional visual changes are recorded here; unintentional ones are fixed in code.
+> **Authority:** UX / Product. **AI policy:** agents propose updates via PR (`workflows/sync.md`, `workflows/review.md`). Intentional visual changes are recorded here; unintentional ones are fixed in code.
 > **Changes when:** screens, interactions or the design system change.
 
 Prototypes live in `blueprint/prototypes/`. Implemented components are the visual source of truth once they exist. Storybook, or an equivalent, is introduced when the component library is big enough to need it.
@@ -49,4 +48,4 @@ Prototypes live in `blueprint/prototypes/`. Implemented components are the visua
 - <specific commitments>
 
 ## Visual regression
-<!-- Which screens/components have baseline screenshots, where they live, how to update them (WF-02). -->
+<!-- Which screens/components have baseline screenshots, where they live, how to update them. -->

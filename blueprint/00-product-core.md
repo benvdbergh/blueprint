@@ -4,12 +4,11 @@ title: Product Core
 status: draft
 owner: Product owner
 last_reviewed: 2026-11-19
-ai_workflows: [WF-01]
 ---
 
 # 00 · Product Core
 
-> **Authority:** Product owner. **AI policy:** read-only. Agents may *propose* changes in an issue; they never edit this file (enforced by `check-protected`).
+> **Authority:** Product owner. **AI policy:** read-only. Agents may *propose* changes in an issue or PR description; they never edit this file.
 > **Changes when:** the product's reason to exist changes. Rarely.
 
 This is the most stable document in the blueprint. Everything else is checked against it. If a feature cannot be traced back to something here, either the feature is out of scope or this document is incomplete. Both are worth a conversation.

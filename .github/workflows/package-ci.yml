@@ -1,5 +1,4 @@
-# CI for the `blueprint init` installer (bin/, cli/, test/). This file belongs to this repository only:
-# the installer never copies .github/workflows/package-*.yml into projects.
+# CI for the `blueprint` installer (bin/, cli/, test/). Projects never get this file.
 name: "Package · installer tests"
 
 on:
@@ -41,5 +40,6 @@ jobs:
           tarball=$(ls "$RUNNER_TEMP"/product-blueprint-*.tgz)
           mkdir -p "$RUNNER_TEMP/smoke" && cd "$RUNNER_TEMP/smoke"
           npx --yes --package="$tarball" -- blueprint init --yes --providers claude,cursor,copilot,gemini,lovable
-          node scripts/governance/check-blueprint.mjs
-          test ! -e .github/workflows/package-ci.yml
+          test -f blueprint/workflows/sync.md && test -f AGENTS.md && test -f blueprint/.install.json
+          test ! -e .github/workflows && test ! -e scripts && test ! -e governance
+          npx --yes --package="$tarball" -- blueprint upgrade --yes

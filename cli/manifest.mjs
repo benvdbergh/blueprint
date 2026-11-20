@@ -1,41 +1,23 @@
 // What `blueprint init` installs, and how each file is treated when it already exists.
 //
 // Strategies
-//   managed  Governance machinery (scripts, workflows, workflow specs). Created when missing. Updated on a
-//            re-run only if the file is unchanged since the last install (hash in the install record).
-//            Otherwise it is a conflict: skipped, or written next to it as <file>.blueprint-new.
-//   seed     Starting content the project is expected to edit (blueprint docs, config, CODEOWNERS).
-//            Created when missing, never touched again.
+//   managed  Files we keep up to date (the workflow instructions, Claude commands, the Cursor rule). Created when
+//            missing. Updated on a re-run only if the file is unchanged since the last install (hash in the
+//            install record). Otherwise it is a conflict: skipped, or written next to it as <file>.blueprint-new.
+//   seed     Starting content the project is expected to edit (the blueprint documents). Created when
+//            missing. Refreshed only while it is still exactly the template that was installed.
 //   block    Instruction files an existing repo may already have (AGENTS.md, CLAUDE.md, ...). Created
 //            when missing. If the file exists, our content is appended between markers and only that
 //            block is replaced on later runs. The rest of the file is never changed.
 //   json     JSON settings merged key by key (Gemini CLI).
-//   lines    Line lists merged by appending missing lines (.gitignore).
 
-// Paths (files or directories, relative to the package root) that every install gets.
+// Everything a project gets: the shared instructions, the blueprint documents and the workflow instructions
+// that agents follow on demand or as scheduled tasks. `only` limits a directory entry to matching paths.
 export const CORE = [
   { path: "AGENTS.md", strategy: "block" },
-  { path: ".github/pull_request_template.md", strategy: "block" },
-  { path: ".github/CODEOWNERS", strategy: "seed" },
-  { path: ".github/ISSUE_TEMPLATE", strategy: "managed" },
-  { path: ".github/actions", strategy: "managed" },
-  { path: ".github/workflows", strategy: "managed" },
-  // The AI workflows in .github/workflows run Claude Code in CI with these files as their prompts,
-  // so they are part of the core install even when Claude Code is not a local provider.
-  { path: ".claude/commands", strategy: "managed" },
-  { path: "blueprint", strategy: "seed" },
-  { path: "contracts", strategy: "seed" },
-  { path: "governance/config.json", strategy: "seed" },
-  { path: "governance/README.md", strategy: "managed" },
-  { path: "governance/health-report-template.md", strategy: "managed" },
-  { path: "governance/workflows", strategy: "managed" },
-  { path: "scripts", strategy: "managed" },
-  { path: "templates", strategy: "managed" },
-  { path: "cli/gitignore.txt", target: ".gitignore", strategy: "lines" },
+  { path: "blueprint", strategy: "seed", only: /^blueprint\/[^/]+\.md$/ },
+  { path: "blueprint/workflows", strategy: "managed" },
 ];
-
-// This repository's own CI for the installer. It lives next to the payload workflows but is never installed.
-export const EXCLUDE = [/^\.github\/workflows\/package-[^/]+\.yml$/];
 
 // Agent providers that need a file of their own on top of AGENTS.md.
 // Only tools whose instruction-file convention is documented and in use today are listed. Tools that read
@@ -44,14 +26,14 @@ export const EXCLUDE = [/^\.github\/workflows\/package-[^/]+\.yml$/];
 export const PROVIDERS = {
   claude: {
     label: "Claude Code",
-    why: "CLAUDE.md imports AGENTS.md. Claude Code reads AGENTS.md only when there is no CLAUDE.md, and only from v2.1.277 (later on Bedrock and Vertex).",
-    files: [{ path: "CLAUDE.md", strategy: "block" }],
+    why: "CLAUDE.md imports AGENTS.md, and /blueprint-sync, /blueprint-audit, … run the workflows. Claude Code reads AGENTS.md only when there is no CLAUDE.md.",
+    files: [{ path: "CLAUDE.md", strategy: "block" }, { path: ".claude/commands", strategy: "managed" }],
     detect: ["CLAUDE.md", ".claude"],
   },
   cursor: {
     label: "Cursor",
     why: "Cursor reads AGENTS.md itself. This adds an always-apply rule with the short version of the rules.",
-    files: [{ path: ".cursor/rules/governance.mdc", strategy: "managed" }],
+    files: [{ path: ".cursor/rules/blueprint.mdc", strategy: "managed" }],
     detect: [".cursor", ".cursorrules"],
   },
   copilot: {
@@ -68,8 +50,8 @@ export const PROVIDERS = {
   },
   lovable: {
     label: "Lovable",
-    why: "Lovable takes instructions from its project Knowledge, not from a repo file. This adds the text to paste there.",
-    files: [{ path: "governance/agents/lovable-knowledge.md", strategy: "managed" }],
+    why: "Lovable takes instructions from its project Knowledge, not from a repo file. init prints the text to paste there.",
+    files: [],
     detect: [],
     detectDependency: "lovable-tagger",
   },
@@ -81,7 +63,9 @@ export const AGENTS_MD_ONLY = {
 
 export const DEFAULT_PROVIDERS = ["claude"];
 
-export const RECORD_FILE = "governance/.blueprint-install.json";
+export const RECORD_FILE = "blueprint/.install.json";
+// Where versions before 0.3 kept the record.
+export const LEGACY_RECORD_FILE = "governance/.blueprint-install.json";
 export const SIDECAR_SUFFIX = ".blueprint-new";
 export const BLOCK_START = "<!-- blueprint:start (managed by `blueprint init`; edits inside this block are replaced on upgrade) -->";
 export const BLOCK_END = "<!-- blueprint:end -->";

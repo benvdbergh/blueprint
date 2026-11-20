@@ -1,18 +1,18 @@
 {
   "name": "product-blueprint",
-  "version": "0.2.0",
-  "description": "Installs the Product Engineering Blueprint (blueprint docs, governance checks, CI workflows, agent instructions) into an empty folder or an existing repository.",
+  "version": "0.3.0",
+  "description": "Adds the Product Engineering Blueprint to a repository: product and engineering documents, plus plain workflow instructions that agents follow on demand or as scheduled tasks to keep the documents and the code in line.",
   "keywords": [
     "ai-agents",
     "agents-md",
     "claude-code",
     "cursor",
     "github-copilot",
-    "governance",
     "scaffold",
     "cli",
     "product-management",
-    "documentation-drift"
+    "documentation-drift",
+    "scheduled-tasks"
   ],
   "license": "MIT",
   "author": "benvdbergh",
@@ -38,13 +38,8 @@
     "CLAUDE.md",
     ".claude/commands/",
     ".cursor/rules/",
-    ".github/",
-    "blueprint/",
-    "contracts/",
-    "governance/",
-    "scripts/",
-    "templates/",
-    "!.github/workflows/package-*.yml"
+    ".github/copilot-instructions.md",
+    "blueprint/"
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs"

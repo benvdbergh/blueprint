@@ -2,10 +2,10 @@
 
 Thanks for helping. This repository is two things at once:
 
-- **The template**: `AGENTS.md`, `blueprint/`, `governance/`, `scripts/`, `.github/`, `.claude/`, `contracts/`, `templates/`. This is what ends up in other people's projects.
-- **The installer** (`product-blueprint` on npm): `bin/`, `cli/`, `test/`, `package.json`. It copies the template into a project.
+- **The template**: `AGENTS.md`, `CLAUDE.md`, `blueprint/` (documents and `workflows/`), `.claude/commands/`, `.cursor/rules/`, `.github/copilot-instructions.md`. `cli/manifest.mjs` (`CORE`, `PROVIDERS`) lists what ends up in projects.
+- **The installer** (`product-blueprint` on npm): `bin/`, `cli/`, `test/`. It copies the template into a project and upgrades it later.
 
-The repository follows its own rules: read [`AGENTS.md`](AGENTS.md) first. Every PR fills in the *Blueprint impact* table of the PR template, and the `quality-gate` and `governance-gate` checks must pass.
+The repository follows its own rules: read [`AGENTS.md`](AGENTS.md) first.
 
 ## Development
 
@@ -14,11 +14,11 @@ Requirements: Node ≥ 20 and git. There are no dependencies to install.
 ```bash
 npm test                                          # installer tests (node:test)
 node bin/blueprint.mjs init /tmp/try --dry-run    # try the installer locally
-node scripts/governance/check-blueprint.mjs       # the template's own checks (see AGENTS.md §6)
 ```
 
-- When you add a file to the template, check whether `cli/manifest.mjs` needs an entry and how it should behave when the file already exists in a project (`managed`, `seed`, `block`, `json`, `lines`).
-- When you change `.gitignore`, copy it to `cli/gitignore.txt` (a test checks they match; npm never packs `.gitignore`).
+- When you add a file to the template, add it to `cli/manifest.mjs` and decide how it behaves when the file already exists in a project (`managed`, `seed`, `block`, `json`).
+- Workflow instructions (`blueprint/workflows/*.md`) are prompts for agents running unattended. Keep each one short and start it with **Run**, **Changes** and **Ends with**, then the goal, the steps, how to decide, and what to report. A test checks the headers.
+- When you remove a file from the template, `upgrade` removes it from projects if they haven't edited it. Nothing else is needed.
 - Files in `.github/workflows/package-*.yml` are this repository's own CI and are never installed.
 - Add a line under `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) for anything a user would notice.
 
