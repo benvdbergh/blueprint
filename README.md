@@ -10,7 +10,7 @@ Product documentation that **humans and AI agents keep in line with the code**.
 npx product-blueprint init            # in an empty folder or an existing repository
 ```
 
-You get eight short documents that describe what the product is for and how it's built, one set of rules for every agent (`AGENTS.md`), and five workflows written as plain instructions. Your agent follows them on demand, or on a schedule as a Claude Code scheduled task: "Follow `blueprint/workflows/sync.md`". There are no GitHub Actions, scripts or config files to maintain.
+You get eight short documents that describe what the product is for and how it's built, one set of rules for every agent (`AGENTS.md`), and six workflows written as plain instructions. Your agent follows them on demand, or on a schedule as a Claude Code scheduled task: "Follow `blueprint/workflows/sync.md`". There are no GitHub Actions, scripts or config files to maintain.
 
 ## What lands in your repository
 
@@ -22,7 +22,7 @@ CLAUDE.md, .claude/commands/      → AGENTS.md, plus /blueprint-sync, /blueprin
 blueprint/
   README.md                       index, conventions, which document covers which code
   00-product-core.md … 07-roadmap.md
-  workflows/                      sync · audit · review · define-feature · onboard
+  workflows/                      sync · audit · align · review · define-feature · onboard
   .install.json                   what was installed, for upgrades
 ```
 
@@ -34,13 +34,14 @@ blueprint/
 |---|---|---|---|
 | [`sync.md`](blueprint/workflows/sync.md) | Reads recent commits and updates the documents they made outdated | blueprint docs, via a PR | daily scheduled task, or after merges |
 | [`audit.md`](blueprint/workflows/audit.md) | Compares the whole blueprint with the code and reports the mismatches that matter | nothing (report only) | weekly scheduled task |
+| [`align.md`](blueprint/workflows/align.md) | Checks 01–07 against 00 Product Core and against each other, without reading the code, and lists the sentences to change | nothing (report only) | on demand, and after a spec change that touches more than one of 01–07 |
 | [`review.md`](blueprint/workflows/review.md) | Checks a branch or PR against the blueprint and says which docs need an update | nothing (comment or report) | on demand, or on open PRs |
 | [`define-feature.md`](blueprint/workflows/define-feature.md) | Turns a request into a feature spec with acceptance criteria | `features/`, 01, 07 | on demand |
 | [`onboard.md`](blueprint/workflows/onboard.md) | Drafts the blueprint from an existing codebase | 01–07, via a PR | once |
 
-Each file says when it runs, what it may change, how to decide when the code and the docs disagree, when to stop, and what to report. They work with any agent that can read files and run `git`. Opening PRs or comments needs `gh` or an equivalent; otherwise the agent reports in its final message.
+Each file says when it runs, what it may change, how to decide when the code and the docs (or two docs) disagree, when to stop, and what to report. They work with any agent that can read files and run `git`. Opening PRs or comments needs `gh` or an equivalent; otherwise the agent reports in its final message.
 
-**Scheduled tasks in Claude Code:** create a task for the repository with the prompt `Follow blueprint/workflows/sync.md` (daily) and another with `Follow blueprint/workflows/audit.md` (weekly). The prompt is the whole setup; the instructions live in the repository, so they're versioned and reviewed like everything else.
+**Scheduled tasks in Claude Code:** create a task for the repository with the prompt `Follow blueprint/workflows/sync.md` (daily) and another with `Follow blueprint/workflows/audit.md` (weekly). The prompt is the whole setup; the instructions live in the repository, so they're versioned and reviewed like everything else. `align` isn't scheduled: run it on demand (`/blueprint-align`) after a spec change that touches more than one of 01–07.
 
 ## Getting started
 

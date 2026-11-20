@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,7 +26,7 @@ const put = (dir, p, s) => { mkdirSync(join(dir, p, ".."), { recursive: true });
 const sha = (s) => createHash("sha256").update(s).digest("hex");
 const record = (dir) => JSON.parse(read(dir, "blueprint/.install.json"));
 
-const WORKFLOWS = ["audit.md", "define-feature.md", "onboard.md", "review.md", "sync.md"];
+const WORKFLOWS = ["align.md", "audit.md", "define-feature.md", "onboard.md", "review.md", "sync.md"];
 
 test("empty folder: AGENTS.md, the blueprint documents and the workflow instructions, nothing else", () => {
   const dir = tmp();
@@ -113,6 +113,21 @@ test("upgrade refreshes files that weren't edited since they were installed, doc
   assert.match(out, /Updated \(unchanged since the last install\)[\s\S]*blueprint\/03-domain-data\.md[\s\S]*sync\.md/);
   assert.equal(read(dir, "blueprint/workflows/sync.md"), readFileSync(join(ROOT, "blueprint/workflows/sync.md"), "utf8"));
   assert.equal(read(dir, "blueprint/03-domain-data.md"), readFileSync(join(ROOT, "blueprint/03-domain-data.md"), "utf8"));
+});
+
+test("upgrade adds a workflow and command that are new since the last install", () => {
+  const dir = tmp();
+  run(dir);
+  const r = record(dir);
+  for (const f of ["blueprint/workflows/align.md", ".claude/commands/blueprint-align.md"]) {
+    rmSync(join(dir, f));
+    delete r.files[f];
+  }
+  writeFileSync(join(dir, "blueprint/.install.json"), JSON.stringify(r));
+  upgrade(dir);
+  assert.equal(read(dir, "blueprint/workflows/align.md"), readFileSync(join(ROOT, "blueprint/workflows/align.md"), "utf8"));
+  assert.ok(existsSync(join(dir, ".claude/commands/blueprint-align.md")));
+  assert.ok(record(dir).files["blueprint/workflows/align.md"], "recorded for the next upgrade");
 });
 
 test("--conflicts sidecar writes our version next to the conflicting file", () => {

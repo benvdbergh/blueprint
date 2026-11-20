@@ -28,6 +28,7 @@ Plain instructions an agent can follow, on demand or as a scheduled task (for ex
 |---|---|---|
 | `blueprint/workflows/sync.md` | Updates the blueprint to match recent code changes; opens a PR | daily, or after merges |
 | `blueprint/workflows/audit.md` | Reports where blueprint and code disagree; changes nothing | weekly |
+| `blueprint/workflows/align.md` | Reports where the blueprint documents contradict 00 or each other; changes nothing | on demand, after a spec change across 01–07 |
 | `blueprint/workflows/review.md` | Checks a branch or PR against the blueprint | on demand, or on open PRs |
 | `blueprint/workflows/define-feature.md` | Turns a request into a feature spec | on demand |
 | `blueprint/workflows/onboard.md` | Drafts the blueprint from an existing codebase | once |
