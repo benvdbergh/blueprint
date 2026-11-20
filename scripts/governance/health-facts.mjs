@@ -3,10 +3,11 @@
 // The AI audit (WF-07 step 2) starts from these facts instead of re-deriving them, so the
 // report is reproducible where it can be and judgement-based only where it has to be.
 //
-// Usage: node scripts/governance/health-facts.mjs [--out health-facts.json] [--since "7 days ago"]
+// Usage: blueprint facts [--out health-facts.json] [--since "7 days ago"]
 import { writeFileSync, readFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { git, walk, arg } from "./lib.mjs";
 import { loadModel } from "./model.mjs";
@@ -21,7 +22,8 @@ const daysSince = (d) => (d ? Math.floor((today - new Date(d)) / 86400000) : nul
 function runCheck(script, extra = []) {
   const env = { ...process.env };
   delete env.GITHUB_ACTIONS; delete env.GITHUB_STEP_SUMMARY; delete env.GITHUB_OUTPUT; delete env.GITHUB_EVENT_PATH;
-  const res = spawnSync("node", [`scripts/governance/${script}`, ...extra], { encoding: "utf8", env });
+  // The sibling scripts, wherever this package lives (npx cache, node_modules or a vendored copy).
+  const res = spawnSync(process.execPath, [fileURLToPath(new URL(script, import.meta.url)), ...extra], { encoding: "utf8", env });
   const lines = (res.stdout ?? "").split("\n");
   return {
     passed: res.status === 0,

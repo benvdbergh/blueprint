@@ -2,7 +2,7 @@
 // Terminology drift: flags use of words listed in the "Avoid" column of the Ubiquitous language
 // table in blueprint/03-domain-data.md. Warnings only — language drift is a signal, not a build break.
 //
-// Usage: node scripts/governance/terminology.mjs [--json out.json]
+// Usage: blueprint check terminology [--json out.json]
 import { writeFileSync } from "node:fs";
 import { Reporter, walk, read, matchesAny, arg } from "./lib.mjs";
 import { loadModel, loadGlossary } from "./model.mjs";

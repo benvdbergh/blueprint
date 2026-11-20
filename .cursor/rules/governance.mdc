@@ -9,6 +9,6 @@ Short version:
 - Read `blueprint/00-product-core.md` and the blueprint documents relevant to the task before changing code.
 - Never edit `blueprint/00-product-core.md`. Propose changes to `approved` blueprint files; don't make them silently.
 - Fill in the Blueprint impact table in every PR (`none | updated | proposed | deviation` per document 00–07).
-- Reference acceptance criteria IDs (`AC-nnn.n`) in tests. Record intentional differences as `blueprint/deviations/DEV-nnn-*.md`.
+- Reference acceptance criteria IDs (`AC-nnn.n`) in tests. Record intentional differences as a deviation (`npx product-blueprint@0.3.0 new deviation "<title>"`).
 - Never weaken lint rules, tests or CI checks to get a green build.
-- Blueprint still empty templates in a repo with code? Setting it up means following `governance/workflows/WF-00-onboarding.md`.
+- Blueprint still empty templates in a repo with code? Setting it up means following the onboarding spec: `npx product-blueprint@0.3.0 docs WF-00`.

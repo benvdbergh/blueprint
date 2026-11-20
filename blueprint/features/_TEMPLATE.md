@@ -11,7 +11,7 @@ source: <issue link>
 # FEAT-000 · <Short feature name>
 
 <!-- Copy to FEAT-nnn-short-name.md (next free number). Acceptance criteria are numbered AC-nnn.1, AC-nnn.2, …
-     Tests reference these IDs (e.g. test("AC-012.1 …")) so WF-05/WF-07 can trace requirements to tests.
+     Tests reference these IDs (e.g. test("AC-nnn.1 …")) so WF-05/WF-07 can trace requirements to tests.
      Status flow: draft → proposed → approved → in-progress → implemented (→ deprecated).
      Once `approved`, changes need the `blueprint:approved-change` label. -->
 

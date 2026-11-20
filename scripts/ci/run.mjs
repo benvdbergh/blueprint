@@ -3,9 +3,9 @@
 // script is not defined. This is what keeps the template stack-agnostic: CI calls the
 // "script contract" (lint, typecheck, test, build, ...) and each project decides what those mean.
 //
-// Usage: node scripts/ci/run.mjs <script> [--required]
-//        node scripts/ci/run.mjs --install
-//        node scripts/ci/run.mjs --detect
+// Usage: blueprint run <script> [--required]
+//        blueprint run --install
+//        blueprint run --detect
 import { existsSync, readFileSync, appendFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
@@ -46,7 +46,7 @@ const scripts = JSON.parse(readFileSync("package.json", "utf8")).scripts ?? {};
 if (!scripts[cmd]) {
   const msg = `Script "${cmd}" is not defined in package.json`;
   if (flag === "--required") { console.log(`::error::${msg} but is required by the quality gate.`); process.exit(1); }
-  console.log(`::notice::${msg} — skipped. Add it to opt in (see governance/README.md#4-script-contract).`);
+  console.log(`::notice::${msg} — skipped. Add it to opt in (see \`blueprint docs governance\`, section 4).`);
   process.exit(0);
 }
 exec(pm, ["run", cmd]);

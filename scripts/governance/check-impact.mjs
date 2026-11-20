@@ -8,7 +8,7 @@
 //    document must be updated, have a follow-up ("proposed", with a link), or a recorded deviation.
 //    `require` rules fail the gate; `suggest` rules only warn. "none" + a written reason downgrades to a warning.
 //
-// Usage: node scripts/governance/check-impact.mjs [--base origin/main] [--body-file pr.md]
+// Usage: blueprint check impact [--base origin/main] [--body-file pr.md]
 import { readFileSync, appendFileSync } from "node:fs";
 import { Reporter, loadConfig, githubEvent, changedFiles, matchesAny, arg } from "./lib.mjs";
 

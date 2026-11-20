@@ -3,7 +3,7 @@
 //
 // Setup:
 //   npm i -D dependency-cruiser
-//   cp templates/dependency-cruiser.cjs .dependency-cruiser.cjs
+//   npx product-blueprint@0.3.0 new dependency-cruiser    (writes .dependency-cruiser.cjs)
 //   package.json → "check:architecture": "depcruise src --config .dependency-cruiser.cjs"
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {

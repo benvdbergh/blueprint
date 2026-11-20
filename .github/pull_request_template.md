@@ -4,7 +4,7 @@
 Closes #
 
 ## Blueprint impact
-<!-- Required (checked by CI: scripts/governance/check-impact.mjs).
+<!-- Required (checked by CI: `blueprint check impact`).
      Impact per document — one of:
        none       not affected (for documents CI says are required: explain why in the note)
        updated    changed in THIS PR

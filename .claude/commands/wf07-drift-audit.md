@@ -10,8 +10,8 @@ Facts: $ARGUMENTS (if empty: `health-facts.json`)
 This audit is **read-only**. The only file you may write is `health-report.md` in the repository root. Don't edit anything else, don't commit, don't open PRs.
 
 ## Steps
-1. If the facts file is missing, run `node scripts/governance/health-facts.mjs --out health-facts.json`. Read it first. It holds the deterministic results, so don't re-derive them; build on them.
-2. Read `governance/health-report-template.md`, `governance/config.json`, all of `blueprint/` and, if provided in the context, the previous report.
+1. If the facts file is missing, run `npx product-blueprint@0.3.0 facts --out health-facts.json`. Read it first. It holds the deterministic results, so don't re-derive them; build on them.
+2. Read the report template (in CI the prompt gives its path; otherwise `npx product-blueprint@0.3.0 docs health-report`), `governance/config.json`, all of `blueprint/` and, if provided in the context, the previous report.
 3. Do the four comparisons, sampling the code with Grep/Glob rather than reading everything:
    - **Blueprint ↔ Code:** each feature at `approved`/`in-progress`/`implemented`: does the behaviour exist? Significant code paths (routes, edge functions, tables) that no feature or document describes.
    - **Blueprint ↔ UI:** routes in the router vs the 02 screen inventory; components that bypass the design system (hard-coded colours, ad-hoc components duplicating `components/ui`); prototypes older than the implemented screen.

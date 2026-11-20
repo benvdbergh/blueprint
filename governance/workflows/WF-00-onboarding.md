@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| **Triggers** | A person asks for it: *"Follow `governance/workflows/WF-00-onboarding.md`"*, or `/wf00-onboard` in Claude Code |
+| **Triggers** | A person asks for it: *"Run `npx product-blueprint@0.3.0 docs WF-00` and follow it"*, or `/wf00-onboard` in Claude Code |
 | **Inputs** | The codebase, its README and docs, `package.json` (or equivalent), migrations and schema, routes, CI/deploy config, git history |
 | **May write** | `blueprint/01`–`07`, proposed ADRs in `blueprint/decisions/`, `governance/config.json` → `impactRules` paths, `AGENTS.md` → *Project specifics*. **Never `blueprint/00-product-core.md`.** Never code, tests, CI or generated files. |
 | **Output** | One branch `blueprint/onboarding` and one PR for the owners to review |
@@ -55,9 +55,9 @@ End every document you touched with an **Open questions** list (as an HTML comme
 
 ### 4. Check
 ```bash
-node scripts/governance/check-blueprint.mjs     # must pass
-node scripts/governance/terminology.mjs         # review any findings: fix the glossary or list them as drift
-node scripts/governance/guard-paths.mjs --workflow WF-00   # only allowed files changed
+npx product-blueprint@0.3.0 check blueprint          # must pass
+npx product-blueprint@0.3.0 check terminology        # review any findings: fix the glossary or list them as drift
+npx product-blueprint@0.3.0 guard --workflow WF-00   # only allowed files changed
 ```
 
 ### 5. Open the pull request

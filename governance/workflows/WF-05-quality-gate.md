@@ -24,7 +24,7 @@
 | 9 | Documentation obligations | `check-blueprint`, `check-protected`, `check-impact`, `trace`, `terminology` | yes, except terminology and trace (warnings), unless a feature is `implemented` |
 
 ## Making it a hard gate
-Run `scripts/setup/configure-github.sh` (or set it up by hand):
+Run `npx product-blueprint@0.3.0 setup-github` (or set it up by hand):
 - Branch protection on `main`: require PRs, require status checks `quality-gate` and `governance-gate`, require review from Code Owners, dismiss stale approvals, **include administrators**.
 - No bypass actors for bots.
 

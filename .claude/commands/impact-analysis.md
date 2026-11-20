@@ -11,7 +11,7 @@ Base: $ARGUMENTS (if empty: `origin/main`)
 2. Read `governance/config.json` (`documents`, `impactRules`) and determine which rules match.
 3. For each blueprint document 00–07, decide: `none`, `updated` (you changed it in this branch), `proposed` (needs a follow-up; create the issue with `gh issue create` if the user agrees), or `deviation` (the code intentionally differs: create `blueprint/deviations/DEV-nnn-*.md`).
    Read the relevant section of each document before deciding. Don't guess from file names alone.
-4. For features touched: check that tests reference their `AC-nnn.n` IDs (`node scripts/governance/trace.mjs`).
+4. For features touched: check that tests reference their `AC-nnn.n` IDs (`npx product-blueprint@0.3.0 check trace`).
 5. Output the filled table exactly in the PR template format:
 
 | Doc | Impact | Note |
@@ -19,4 +19,4 @@ Base: $ARGUMENTS (if empty: `origin/main`)
 | 00 Product Core | none | |
 | … | | |
 
-6. Validate: write the PR body to a temp file and run `node scripts/governance/check-impact.mjs --base <base> --body-file <file>`.
+6. Validate: write the PR body to a temp file and run `npx product-blueprint@0.3.0 check impact --base <base> --body-file <file>`.

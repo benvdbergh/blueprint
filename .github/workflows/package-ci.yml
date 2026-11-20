@@ -41,5 +41,11 @@ jobs:
           tarball=$(ls "$RUNNER_TEMP"/product-blueprint-*.tgz)
           mkdir -p "$RUNNER_TEMP/smoke" && cd "$RUNNER_TEMP/smoke"
           npx --yes --package="$tarball" -- blueprint init --yes --providers claude,cursor,copilot,gemini,lovable
-          node scripts/governance/check-blueprint.mjs
-          test ! -e .github/workflows/package-ci.yml
+          npx --yes --package="$tarball" -- blueprint check
+          npx --yes --package="$tarball" -- blueprint new feature "Smoke test"
+          npx --yes --package="$tarball" -- blueprint check blueprint
+          test ! -e .github/workflows/package-ci.yml && test ! -e scripts && test ! -e templates
+          # --vendor: the copy in .blueprint/ runs without the package
+          mkdir -p "$RUNNER_TEMP/vendor" && cd "$RUNNER_TEMP/vendor"
+          npx --yes --package="$tarball" -- blueprint init --yes --vendor
+          node .blueprint/bin/blueprint.mjs check

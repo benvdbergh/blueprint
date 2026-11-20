@@ -26,7 +26,7 @@ for (const d of model.documents) {
 const checkCollection = (items, kind, statuses, fields) => {
   const seen = new Map();
   for (const it of items) {
-    if (!it.fileId) { r.error(`${kind} file name must start with its ID (see _TEMPLATE.md)`, it.file); continue; }
+    if (!it.fileId) { r.error(`${kind} file name must start with its ID (create it with \`blueprint new\`)`, it.file); continue; }
     requireFields(it, fields);
     if (it.meta.id && it.meta.id !== it.fileId) r.error(`front matter id \`${it.meta.id}\` does not match file name (${it.fileId})`, it.file);
     if (it.meta.status && !statuses.includes(it.meta.status)) r.error(`status \`${it.meta.status}\` not in ${statuses.join("|")}`, it.file);

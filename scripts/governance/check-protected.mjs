@@ -6,7 +6,7 @@
 // approval label (default: `blueprint:approved-change`) applied by a human with the authority
 // listed in governance/config.json. PRs opened by bots may never change 00 Product Core.
 //
-// Usage: node scripts/governance/check-protected.mjs [--base origin/main] [--labels a,b]
+// Usage: blueprint check protected [--base origin/main] [--labels a,b]
 import { Reporter, loadConfig, githubEvent, changedFiles, fileAtRef, parseFrontMatter, arg } from "./lib.mjs";
 
 const r = new Reporter("Protected specifications (check-protected)");

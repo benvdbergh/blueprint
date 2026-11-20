@@ -19,7 +19,7 @@ You keep the blueprint aligned with what was merged. Change documentation only, 
    - If the change you'd make touches a document or feature with `status: approved` and **alters intent** (requirements, acceptance criteria, rules), don't edit it. List it under *Needs owner decision* instead. Factual additions (screen inventory row, ADR index row, delivery log row) are fine.
    - If the implementation looks wrong rather than the docs outdated, don't document the bug. List it under *Possible implementation drift* and suggest a `DEV-nnn` or a fix.
 6. **Cross-document consistency:** glossary terms used consistently; every FEAT/ADR/DEV reference resolves; 02 screen inventory ↔ router; 04 ADR index ↔ `blueprint/decisions/`; 07 status ↔ feature `status`; 05 ↔ `contracts/openapi.yaml`.
-7. `node scripts/governance/check-blueprint.mjs` must pass.
+7. `npx product-blueprint@0.3.0 check blueprint` must pass.
 8. **Result.** If nothing needs changing, edit nothing and say so with the reasons. Otherwise prepare a PR body: the PR template's impact table (rows you changed `updated`, others `none`), then **Changes** (*Document · Change · Evidence (commit/file)*), **Needs owner decision**, **Possible implementation drift**, **Consistency check** results.
    - **Interactive:** offer to commit on a branch `blueprint-sync/<sha>` with message `docs(blueprint): sync <range> [skip blueprint-sync]` and open the PR (labels `blueprint-sync`, `ai-proposal`).
    - **In CI:** don't commit or push. Write the files the workflow prompt names. The workflow verifies the changed paths (`guard-paths.mjs --workflow WF-06`), then commits and opens the PR.

@@ -33,6 +33,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GOVERNANCE_BOT_TOKEN || github.token }}
+      - uses: ./.github/actions/setup-blueprint
       - id: precheck
         uses: ./.github/actions/ai-precheck
         with:
@@ -58,6 +59,7 @@ jobs:
           if [ -z "$non_blueprint" ] && [ -z "$INPUT_RANGE" ]; then skip=true; echo "::notice::Only blueprint files changed; nothing to sync."; fi
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
           mkdir -p .governance-out
+          $BLUEPRINT prompt wf06-blueprint-sync > .governance-out/instructions.md
 
       - name: Claude · WF-06 blueprint sync
         if: steps.precheck.outputs.run == 'true' && steps.range.outputs.skip != 'true'
@@ -66,7 +68,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GOVERNANCE_BOT_TOKEN || github.token }}
           prompt: |
-            Follow the instructions in `.claude/commands/wf06-blueprint-sync.md` exactly.
+            Follow the instructions in `.governance-out/instructions.md` exactly.
             Range: ${{ steps.range.outputs.range }}
 
             CI context — overrides the "Result" step of that file:
@@ -77,17 +79,17 @@ jobs:
               and rejects the whole proposal if you touched a file WF-06 may not change.
           claude_args: >-
             --max-turns 60
-            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(node scripts/governance/check-blueprint.mjs),Bash(node scripts/governance/terminology.mjs)"
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(${{ env.BLUEPRINT }} check blueprint),Bash(${{ env.BLUEPRINT }} check terminology),Bash(${{ env.BLUEPRINT }} new:*),Bash(${{ env.BLUEPRINT }} docs:*)"
             ${{ vars.CLAUDE_MODEL && format('--model {0}', vars.CLAUDE_MODEL) || '' }}
 
       - name: Guard · ownership model
         if: steps.precheck.outputs.run == 'true' && steps.range.outputs.skip != 'true'
         id: guard
-        run: node scripts/governance/guard-paths.mjs --workflow WF-06
+        run: $BLUEPRINT guard --workflow WF-06
 
       - name: Validate blueprint
         if: steps.guard.outputs.changed != '0' && steps.guard.outcome == 'success'
-        run: node scripts/governance/check-blueprint.mjs
+        run: $BLUEPRINT check blueprint
 
       - name: Open blueprint sync PR
         if: steps.guard.outputs.changed != '0' && steps.guard.outcome == 'success'

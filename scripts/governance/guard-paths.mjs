@@ -2,9 +2,9 @@
 // Enforces the ownership model on AI workflow output. After an agent has edited files (uncommitted),
 // this verifies every changed path is allowed for that workflow before anything is committed.
 //
-// Usage: node scripts/governance/guard-paths.mjs --workflow WF-06
-//        node scripts/governance/guard-paths.mjs --allow "blueprint/**" --deny "blueprint/00-product-core.md"
-//        node scripts/governance/guard-paths.mjs --none          (read-only workflows: nothing may change)
+// Usage: blueprint guard --workflow WF-06
+//        blueprint guard --allow "blueprint/**" --deny "blueprint/00-product-core.md"
+//        blueprint guard --none          (read-only workflows: nothing may change)
 // Prints the changed files; exits 1 on any violation.
 import { appendFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";

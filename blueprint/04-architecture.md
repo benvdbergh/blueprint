@@ -30,7 +30,7 @@ flowchart LR
 
 ## Module structure & boundaries
 <!-- The rules here should be machine-checked by `npm run check:architecture`
-     (see templates/dependency-cruiser.cjs). -->
+     (starter: npx product-blueprint@0.3.0 new dependency-cruiser). -->
 | Module | Path | May depend on | Must not depend on |
 |---|---|---|---|
 | UI components | `src/components/` | `src/lib/` | `src/integrations/` directly |

@@ -8,7 +8,7 @@
 |---|---|
 | **Triggers** | Push to `main` (= merged PR) · significant blueprint change · approved decision · manual dispatch with a commit range |
 | **Inputs** | `git diff before..after` · the PR's impact table · the affected documents only · `governance/config.json` |
-| **Runtime** | `.github/workflows/wf06-blueprint-sync.yml` → Claude Code Action running `.claude/commands/wf06-blueprint-sync.md` |
+| **Runtime** | `.github/workflows/wf06-blueprint-sync.yml` → Claude Code Action running the `wf06-blueprint-sync` prompt (`blueprint prompt`; the repository's `.claude/commands/` copy wins) |
 | **May write** | Documents whose `aiWorkflows` include WF-06 (01–07), on a branch `blueprint-sync/<sha>`, opened as a PR labelled `blueprint-sync`, `ai-proposal`. **Never 00. Never pushes to `main`.** |
 
 ## Flow

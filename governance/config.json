@@ -1,5 +1,5 @@
 {
-  "$comment": "Single machine-readable source for governance rules. Read by scripts/governance/*.mjs and by AI workflows. Human explanation: governance/README.md.",
+  "$comment": "Single machine-readable source for governance rules. Read by the product-blueprint checks and by AI workflows. Human explanation: npx product-blueprint docs governance.",
   "enforcement": "enforce",
   "documents": {
     "00": { "file": "blueprint/00-product-core.md", "title": "Product Core", "authority": "Product owner", "aiWorkflows": ["WF-01"], "alwaysProtected": true },
@@ -39,13 +39,13 @@
 
   "traceability": {
     "testGlobs": ["tests/**", "test/**", "e2e/**", "**/*.test.*", "**/*.spec.*", "**/__tests__/**"],
-    "ignoreGlobs": ["node_modules/**", "dist/**", "build/**", ".git/**", "coverage/**", "templates/**"],
+    "ignoreGlobs": ["node_modules/**", "dist/**", "build/**", ".git/**", "coverage/**", "templates/**", ".blueprint/**"],
     "coveredStatuses": ["approved", "in-progress", "implemented"],
     "enforceForStatuses": ["implemented"]
   },
 
   "terminology": {
     "scanGlobs": ["blueprint/**/*.md", "src/**/*.ts", "src/**/*.tsx"],
-    "ignoreGlobs": ["blueprint/03-domain-data.md", "node_modules/**"]
+    "ignoreGlobs": ["blueprint/03-domain-data.md", "node_modules/**", ".blueprint/**"]
   }
 }

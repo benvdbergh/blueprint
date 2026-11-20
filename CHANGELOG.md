@@ -4,6 +4,26 @@ All notable changes to the `product-blueprint` installer and the template it ins
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-20
+
+A leaner footprint: projects keep only what they own, and the checks, templates and workflow specs run from the package.
+
+### Changed
+- `init` no longer copies `scripts/`, `templates/`, `contracts/README.md`, `governance/README.md`, `governance/workflows/`, `governance/health-report-template.md` or the `blueprint/*/_TEMPLATE.md` files into the project. What it writes: `AGENTS.md` (+ provider files), the eight blueprint documents and `blueprint/README.md`, `governance/config.json`, the workflows, actions, PR template, issue forms and `CODEOWNERS`.
+- The workflows call the CLI through the new `.github/actions/setup-blueprint` action (`$BLUEPRINT`), pinned to the installed version (`npx product-blueprint@0.3.0`). `AGENTS.md`, the Cursor and Copilot files, the prompts and the specs use the same pinned call.
+- AI workflows read their instructions with `blueprint prompt <name>`, which prefers the project's `.claude/commands/<name>.md`. `.claude/commands/` is now installed with the `claude` provider only.
+- `lovable` no longer installs `governance/agents/lovable-knowledge.md`; `blueprint docs lovable` prints the text to paste.
+- `health-facts` finds its sibling checks next to itself instead of in `scripts/governance/`.
+
+### Added
+- Commands: `check [blueprint|protected|impact|trace|terminology|all]`, `guard`, `facts`, `run <script>`, `setup-github`, `new feature|adr|deviation "<title>"` (next free ID, filled-in front matter), `new openapi|dependency-cruiser|visual-test|package-scripts`, `docs [name]`, `prompt [name]`.
+- `upgrade`: refreshes an existing setup and removes files an earlier version installed that the layout no longer needs, only when they're unchanged and nothing still calls them. `init` on an old setup reports them without removing anything.
+- `--vendor`: copies the CLI and everything it serves into `.blueprint/` for CI without npm access; `--lean` switches back. The install record now has a `layout`.
+- `cli/stamp-version.mjs` (the npm `version` script) keeps the `product-blueprint@x.y.z` pins in step with `package.json`.
+
+### Upgrading from 0.2
+Run `npx product-blueprint@0.3.0 upgrade` on a branch, review the diff and merge it. Edited copies of the old scripts or specs are kept and listed; delete them once nothing uses them.
+
 ## [0.2.0] - 2026-11-20
 
 ### Added

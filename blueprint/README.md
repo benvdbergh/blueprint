@@ -1,6 +1,6 @@
 # Blueprint
 
-The product's agreed intent: **what** we build and **why**. Code, tests and contracts show what we actually built. The governance workflows (`../governance/`) keep the two aligned.
+The product's agreed intent: **what** we build and **why**. Code, tests and contracts show what we actually built. The governance workflows (`npx product-blueprint@0.3.0 docs governance`) keep the two aligned.
 
 | # | Document | Primary authority | AI workflows (propose only) |
 |---|---|---|---|
@@ -24,7 +24,7 @@ Supporting folders:
 
 ## Conventions
 
-1. **Front matter is required.** `id`, `title`, `status`, `owner`, `last_reviewed` on core documents. Feature, ADR and deviation fields are in each folder's `_TEMPLATE.md`. Validated by `scripts/governance/check-blueprint.mjs`.
+1. **Front matter is required.** `id`, `title`, `status`, `owner`, `last_reviewed` on core documents. Create features, ADRs and deviations with `npx product-blueprint@0.3.0 new feature|adr|deviation "<title>"`, which fills in the fields and the next free ID. Validated by `npx product-blueprint@0.3.0 check blueprint`.
 2. **Status:** `draft → proposed → approved` (`deprecated` when retired). Features also use `in-progress → implemented`. Changing a file whose current status is `approved` requires the `blueprint:approved-change` label. `00` always requires it.
 3. **IDs are permanent.** Never reuse or renumber them. References to IDs that don't exist fail CI.
 4. **Describe intent, link to truth.** Don't copy the schema, the OpenAPI spec or token values into prose. Link to the file that holds them and explain what they mean.

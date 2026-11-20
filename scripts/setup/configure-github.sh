@@ -6,7 +6,7 @@
 #  - optionally replaces the @OWNER placeholder in CODEOWNERS
 #  - optionally marks the repo as a GitHub template
 #
-# Usage: scripts/setup/configure-github.sh [--repo owner/name] [--reviews N] [--codeowner @handle] [--template]
+# Usage: blueprint setup-github [--repo owner/name] [--reviews N] [--codeowner @handle] [--template]
 #   --reviews N     required approving reviews (default 1). Use 0 for solo projects: GitHub does
 #                   not let you approve your own PR, so 1 would block you.
 #   --codeowner     replaces @OWNER in .github/CODEOWNERS (local file change; commit it yourself)

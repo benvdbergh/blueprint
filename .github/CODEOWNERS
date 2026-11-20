@@ -1,6 +1,6 @@
 # Replace the placeholder teams/users with real GitHub handles (e.g. @alice or @acme/product).
 # Combined with "Require review from Code Owners" this enforces the ownership model
-# in governance/README.md. A single-person project can put one handle everywhere.
+# (`npx product-blueprint@0.3.0 docs governance`, section 2). A single-person project can put one handle everywhere.
 
 *                                   @OWNER
 
@@ -31,7 +31,7 @@
 /AGENTS.md                          @OWNER
 /CLAUDE.md                          @OWNER
 /governance/                        @OWNER
-/scripts/                           @OWNER
+/.blueprint/                        @OWNER
 /.github/                           @OWNER
 /.claude/                           @OWNER
 /.cursor/                           @OWNER

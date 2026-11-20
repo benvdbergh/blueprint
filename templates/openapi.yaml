@@ -1,4 +1,4 @@
-# Starter OpenAPI document. Copy to contracts/openapi.yaml when the first API endpoint exists.
+# Starter OpenAPI document (`npx product-blueprint@0.3.0 new openapi` writes it to contracts/openapi.yaml). Add it when the first API endpoint exists.
 openapi: 3.1.0
 info:
   title: Product API

@@ -33,14 +33,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - uses: ./.github/actions/setup-blueprint
 
       - name: 1 · Deterministic facts
         run: |
           mkdir -p .governance-out
-          node scripts/governance/health-facts.mjs --out .governance-out/health-facts.json --since "$WINDOW"
+          $BLUEPRINT facts --out .governance-out/health-facts.json --since "$WINDOW"
+          $BLUEPRINT prompt wf07-drift-audit > .governance-out/instructions.md
+          $BLUEPRINT docs health-report > .governance-out/health-report-template.md
 
       - name: 2 · Context (previous report, gate status on main)
         run: |
@@ -65,7 +65,8 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
           prompt: |
-            Follow the instructions in `.claude/commands/wf07-drift-audit.md` exactly.
+            Follow the instructions in `.governance-out/instructions.md` exactly.
+            Report template: `.governance-out/health-report-template.md`
             Facts: `.governance-out/health-facts.json`
             Previous report: `.governance-out/previous-report.md` (may be empty)
             Latest WF-05 results on main: `.governance-out/wf05-main.json`, `.governance-out/wf05-governance-main.json`
@@ -75,11 +76,11 @@ jobs:
             Edit no other files. A guard step fails the run if any tracked file changes.
           claude_args: >-
             --max-turns 80
-            --allowedTools "Read,Glob,Grep,Write,Bash(git log:*),Bash(git ls-files:*),Bash(git show:*),Bash(node scripts/governance/*)"
+            --allowedTools "Read,Glob,Grep,Write,Bash(git log:*),Bash(git ls-files:*),Bash(git show:*),Bash(${{ env.BLUEPRINT }} check:*),Bash(${{ env.BLUEPRINT }} docs:*)"
             ${{ vars.CLAUDE_MODEL && format('--model {0}', vars.CLAUDE_MODEL) || '' }}
 
       - name: Guard · audit is read-only
-        run: node scripts/governance/guard-paths.mjs --none
+        run: $BLUEPRINT guard --none
 
       - name: Fallback report (facts only)
         if: steps.precheck.outputs.run != 'true' || hashFiles('.governance-out/health-report.md') == ''

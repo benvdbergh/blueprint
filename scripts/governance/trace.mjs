@@ -5,7 +5,7 @@
 // Criteria of features whose status is in `traceability.enforceForStatuses` (default: implemented)
 // fail the check; others only warn.
 //
-// Usage: node scripts/governance/trace.mjs [--json out.json] [--no-fail]
+// Usage: blueprint check trace [--json out.json] [--no-fail]
 import { writeFileSync } from "node:fs";
 import { Reporter, walk, read, matchesAny, arg } from "./lib.mjs";
 import { loadModel } from "./model.mjs";

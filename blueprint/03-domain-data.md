@@ -13,7 +13,7 @@ ai_workflows: [WF-03, WF-06]
 > **Source-of-truth split:** database **migrations** are the technical truth for the *actual* schema. This document describes the *intended* domain model and what it means. When they disagree, that is drift: either fix the code or record a deviation.
 
 ## Ubiquitous language
-<!-- The terminology check (scripts/governance/terminology.mjs) flags words from the Avoid column
+<!-- The terminology check (blueprint check terminology) flags words from the Avoid column
      in the blueprint and in src/. Keep one term per concept. -->
 | Term | Definition | Avoid |
 |---|---|---|

@@ -29,24 +29,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - uses: ./.github/actions/setup-blueprint
       - name: Blueprint structure
-        run: node scripts/governance/check-blueprint.mjs
+        run: $BLUEPRINT check blueprint
       - name: Protected specifications
         if: always()
-        run: node scripts/governance/check-protected.mjs
+        run: $BLUEPRINT check protected
       - name: Impact analysis
         if: always()
         id: impact
-        run: node scripts/governance/check-impact.mjs
+        run: $BLUEPRINT check impact
       - name: Requirements ↔ tests traceability
         if: always()
-        run: node scripts/governance/trace.mjs
+        run: $BLUEPRINT check trace
       - name: Terminology
         if: always()
-        run: node scripts/governance/terminology.mjs
+        run: $BLUEPRINT check terminology
       - name: Triggered workflows
         if: always() && steps.impact.outputs.workflows != ''
         run: echo "::notice::This change is relevant to ${{ steps.impact.outputs.workflows }}"

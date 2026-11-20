@@ -1,7 +1,7 @@
 # WF-05 · Code Quality & Implementation Validation — code half of the hard gate.
 # Required status check: "quality-gate". Deterministic only; no AI in the gate.
 # Each step runs a package.json script from the script contract and skips if it isn't defined
-# (governance/README.md#4-script-contract). Add `--required` to make a script mandatory.
+# (`blueprint docs governance`, section 4). Add `--required` to make a script mandatory.
 name: "WF-05 · Quality gate"
 
 on:
@@ -27,11 +27,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
       - name: 1 · Lint & formatting
-        run: node scripts/ci/run.mjs lint
+        run: $BLUEPRINT run lint
       - name: 2 · Type checking
-        run: node scripts/ci/run.mjs typecheck
+        run: $BLUEPRINT run typecheck
       - name: 8 · Architectural constraints
-        run: node scripts/ci/run.mjs check:architecture
+        run: $BLUEPRINT run check:architecture
 
   test:
     name: Unit & integration tests
@@ -42,9 +42,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
       - name: 3 · Unit tests
-        run: node scripts/ci/run.mjs test
+        run: $BLUEPRINT run test
       - name: 4 · Integration tests
-        run: node scripts/ci/run.mjs test:integration
+        run: $BLUEPRINT run test:integration
 
   e2e:
     name: End-to-end tests
@@ -60,7 +60,7 @@ jobs:
         if: steps.has.outputs.e2e == 'true' && hashFiles('playwright.config.*') != ''
         run: npx playwright install --with-deps chromium
       - name: 5 · End-to-end tests
-        run: node scripts/ci/run.mjs test:e2e
+        run: $BLUEPRINT run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -79,7 +79,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
       - name: 6 · Build validation
-        run: node scripts/ci/run.mjs build
+        run: $BLUEPRINT run build
 
   security:
     name: Dependency & security scan

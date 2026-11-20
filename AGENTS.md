@@ -11,11 +11,12 @@ Shared instructions for **every** contributor to this repository: Claude Code, C
 | `supabase/migrations/` (or equivalent) | Database migrations | The *actual* schema |
 | `contracts/openapi.yaml` | API contract | The *actual* API surface |
 | tests | Executable behaviour | Whether acceptance criteria hold |
-| `governance/` | How we work: workflows, ownership, checks | The rules below |
+| `governance/config.json` | How we work: ownership, impact rules, enforcement mode | The rules below |
+| `product-blueprint` (npm) | The governance checks, templates and workflow specs, pinned in `governance/.blueprint-install.json` (see §6) | How the rules are checked |
 
 Start of every task: read `blueprint/00-product-core.md`, then **only** the blueprint documents relevant to the task. `governance/config.json` → `impactRules` tells you which documents relate to which code paths.
 
-If the blueprint documents are still unfilled templates (`status: draft`, placeholders like `<Term>`) while the repository already has code, the blueprint hasn't been onboarded yet. When your task is to set up the blueprint, follow [`governance/workflows/WF-00-onboarding.md`](governance/workflows/WF-00-onboarding.md). For any other task, mention to the person that onboarding is pending and carry on.
+If the blueprint documents are still unfilled templates (`status: draft`, placeholders like `<Term>`) while the repository already has code, the blueprint hasn't been onboarded yet. When your task is to set up the blueprint, run `npx product-blueprint@0.3.0 docs WF-00` and follow it. For any other task, mention to the person that onboarding is pending and carry on.
 
 ## 2. Non-negotiable rules
 
@@ -24,7 +25,7 @@ If the blueprint documents are still unfilled templates (`status: draft`, placeh
 3. **Implementation changes require impact analysis.** Every PR fills in the *Blueprint impact* table in the PR template: for each of 00–07, `none`, `updated`, `proposed` (with a link to the follow-up), or `deviation` (with `DEV-nnn`). CI checks this table.
 4. **Generated artifacts are generated.** Never hand-edit generated files (OpenAPI output, Supabase types, lockfiles, visual baselines without intent). Change the source and regenerate.
 5. **Tests validate behaviour; documentation describes intent.** When you implement an acceptance criterion `AC-nnn.n`, put its ID in the test name or in a `// covers: AC-nnn.n` comment.
-6. **Every deviation is explicit.** If you deliberately implement something differently from the blueprint, add `blueprint/deviations/DEV-nnn-*.md` (template in that folder) explaining why. Don't bend the code or the docs just to make them look consistent.
+6. **Every deviation is explicit.** If you deliberately implement something differently from the blueprint, add a deviation (`npx product-blueprint@0.3.0 new deviation "<title>"` creates `blueprint/deviations/DEV-nnn-*.md`) explaining why. Don't bend the code or the docs just to make them look consistent.
 7. **Detection before remediation.** When you notice drift that isn't part of your task, report it (PR description, issue). Don't fix it in passing.
 
 ## 3. Ownership (who may change what)
@@ -40,11 +41,11 @@ If the blueprint documents are still unfilled templates (`status: draft`, placeh
 
 ## 4. Working on a change
 
-1. **Is it defined?** New behaviour needs a feature spec in `blueprint/features/` (status `approved` before implementation starts). No spec: propose one first (`/wf01-define-feature` in Claude Code, or the *Feature request* issue form).
+1. **Is it defined?** New behaviour needs a feature spec in `blueprint/features/` (status `approved` before implementation starts). No spec: propose one first (`/wf01-define-feature` in Claude Code, the *Feature request* issue form, or `npx product-blueprint@0.3.0 new feature "<title>"`).
 2. **Branch + PR.** Never push to `main`. One concern per PR.
 3. **Implement** using the domain terms from the Ubiquitous language table in `03` (the *Avoid* column is checked).
 4. **Test** each acceptance criterion you touched and reference its ID.
-5. **Impact analysis.** Run `node scripts/governance/check-impact.mjs --body-file <your PR body>` locally or let CI do it. Update affected documents in the same PR where you can.
+5. **Impact analysis.** Run `npx product-blueprint@0.3.0 check impact --body-file <your PR body>` locally or let CI do it. Update affected documents in the same PR where you can.
 6. **Gate.** The `quality-gate` and `governance-gate` checks must be green. Do not disable, skip or weaken checks, tests or lint rules to get there. If a check is wrong, say so in the PR.
 
 ## 5. Writing in the blueprint
@@ -53,17 +54,20 @@ If the blueprint documents are still unfilled templates (`status: draft`, placeh
 - Describe intent and link to the truth (`contracts/openapi.yaml`, migrations, token files). Don't copy them into prose.
 - IDs (`FEAT-nnn`, `AC-nnn.n`, `ADR-nnnn`, `DEV-nnn`) are permanent: never renumber or reuse them.
 - Update `last_reviewed` when you have verified a document against the code.
-- Validate with `node scripts/governance/check-blueprint.mjs`.
+- Validate with `npx product-blueprint@0.3.0 check blueprint`.
 
 ## 6. Commands
 
+The checks, templates and workflow specs come from the `product-blueprint` package at the version this repository is set up with. There are no copies to edit in the repository (unless it was set up with `--vendor`).
+
 ```bash
-node scripts/governance/check-blueprint.mjs     # blueprint structure + references
-node scripts/governance/check-impact.mjs --base origin/main --body-file pr.md
-node scripts/governance/check-protected.mjs --base origin/main
-node scripts/governance/trace.mjs               # acceptance criteria ↔ tests
-node scripts/governance/terminology.mjs         # glossary "Avoid" terms
-node scripts/ci/run.mjs <script>                # lint | typecheck | test | build | … (skips if undefined)
+npx product-blueprint@0.3.0 check                  # blueprint structure, traceability, terminology
+npx product-blueprint@0.3.0 check impact --base origin/main --body-file pr.md
+npx product-blueprint@0.3.0 check protected --base origin/main
+npx product-blueprint@0.3.0 check trace            # acceptance criteria ↔ tests
+npx product-blueprint@0.3.0 new feature "<title>"  # also: adr, deviation, openapi, dependency-cruiser, visual-test
+npx product-blueprint@0.3.0 docs [WF-00 … WF-07]   # workflow specs and the governance handbook
+npx product-blueprint@0.3.0 run <script>           # lint | typecheck | test | build | … (skips if undefined)
 ```
 
 <!-- Project-specific additions (stack, commands, conventions) go below this line. Keep them short and in this one file. -->

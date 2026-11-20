@@ -2,7 +2,7 @@
 id: DEV-000
 title: <What differs, in a few words>
 status: open
-blueprint_ref: <e.g. 03-domain-data.md#entities, FEAT-012 AC-012.3>
+blueprint_ref: <e.g. 03-domain-data.md#entities, FEAT-nnn AC-nnn.n>
 code_ref: <path(s) or PR link>
 recorded: 2026-01-01
 review_by: <date or milestone>
