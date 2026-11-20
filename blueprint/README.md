@@ -1,33 +1,77 @@
 # Blueprint
 
-The product's agreed intent: **what** we build and **why**. Code, tests and contracts show what we actually built. The governance workflows (`npx product-blueprint@0.3.0 docs governance`) keep the two aligned.
+The product's agreed intent: **what** we build and **why**. The code, tests and contracts show what we actually built. The instructions in [`workflows/`](workflows/) let an agent keep the two in line.
 
-| # | Document | Primary authority | AI workflows (propose only) |
-|---|---|---|---|
-| 00 | [Product Core](00-product-core.md) | Product owner | WF-01 (issue only, never edits) |
-| 01 | [Product](01-product.md) | Product management | WF-01, WF-06 |
-| 02 | [UX & Design](02-ux-design.md) | UX / Product | WF-02, WF-06 |
-| 03 | [Domain & Data](03-domain-data.md) | Architecture | WF-03, WF-06 |
-| 04 | [Architecture & Technology](04-architecture.md) | Architecture | WF-03, WF-06 |
-| 05 | [Interfaces & Integrations](05-interfaces.md) | API / Engineering | WF-04, WF-06 |
-| 06 | [Deployment & Operations](06-deployment.md) | Engineering / Operations | WF-03, WF-06 |
-| 07 | [Roadmap & Delivery](07-roadmap.md) | Product management | WF-01, WF-06 |
-
-Supporting folders:
-
-| Folder | Contains | ID format |
+| # | Document | Authority |
 |---|---|---|
-| `features/` | One spec per feature, with acceptance criteria | `FEAT-001`, criteria `AC-001.1` |
+| 00 | [Product Core](00-product-core.md) | Product owner. Agents never edit it; they propose changes in an issue or PR description. |
+| 01 | [Product](01-product.md) | Product management |
+| 02 | [UX & Design](02-ux-design.md) | UX / Product |
+| 03 | [Domain & Data](03-domain-data.md) | Architecture |
+| 04 | [Architecture & Technology](04-architecture.md) | Architecture |
+| 05 | [Interfaces & Integrations](05-interfaces.md) | API / Engineering |
+| 06 | [Deployment & Operations](06-deployment.md) | Engineering / Operations |
+| 07 | [Roadmap & Delivery](07-roadmap.md) | Product management |
+
+Folders that appear when they're first needed:
+
+| Folder | Contains | ID |
+|---|---|---|
+| `features/` | One spec per feature, with acceptance criteria ([format](workflows/define-feature.md)) | `FEAT-001`, criteria `AC-001.1` |
 | `decisions/` | Architecture decision records | `ADR-0001` |
-| `deviations/` | Intentional or known differences between blueprint and implementation | `DEV-001` |
-| `prototypes/` | Approved UX prototypes | named after the feature |
+| `deviations/` | Known differences between blueprint and code that the team accepts for now | `DEV-001` |
+| `prototypes/` | UX prototypes or links to them, named after the feature | `FEAT-001-…` |
+
+## Which document covers what
+
+Where to look when code changes. Adjust the paths to this repository (onboarding does this).
+
+| Code | Document |
+|---|---|
+| Migrations, schema (`supabase/migrations/`, `prisma/`, `db/`) and domain code (`src/domain/`, `src/types/`) | 03 Domain & Data |
+| Dependencies, framework config, module structure (`package.json`, `vite.config.*`, `tsconfig*.json`) | 04 Architecture |
+| API routes and server functions (`supabase/functions/`, `api/`, `server/`), OpenAPI files | 05 Interfaces |
+| Hosting, CI and infrastructure (`Dockerfile`, `vercel.json`, `infra/`, `.github/workflows/deploy*`) | 06 Deployment |
+| Pages and routes (`src/pages/`, `src/routes/`, `src/app/`) | 01 Product, 02 UX & Design |
+| Components and design tokens (`src/components/`, `tailwind.config.*`, `src/index.css`) | 02 UX & Design |
+| A feature's behaviour | its spec in `features/`, and 07 Roadmap when it ships |
 
 ## Conventions
 
-1. **Front matter is required.** `id`, `title`, `status`, `owner`, `last_reviewed` on core documents. Create features, ADRs and deviations with `npx product-blueprint@0.3.0 new feature|adr|deviation "<title>"`, which fills in the fields and the next free ID. Validated by `npx product-blueprint@0.3.0 check blueprint`.
-2. **Status:** `draft → proposed → approved` (`deprecated` when retired). Features also use `in-progress → implemented`. Changing a file whose current status is `approved` requires the `blueprint:approved-change` label. `00` always requires it.
-3. **IDs are permanent.** Never reuse or renumber them. References to IDs that don't exist fail CI.
-4. **Describe intent, link to truth.** Don't copy the schema, the OpenAPI spec or token values into prose. Link to the file that holds them and explain what they mean.
-5. **One term per concept.** Use the Ubiquitous language table in `03`. Terms in its *Avoid* column are flagged.
-6. **Deviations are explicit.** If the code is meant to differ from the blueprint, record a `DEV-nnn` instead of forcing artificial consistency.
-7. **Bump `last_reviewed`** whenever you have confirmed that a document is still accurate, even if you made no other change. WF-07 flags stale documents.
+1. **Front matter** on every document: `id`, `title`, `status`, `owner`, `last_reviewed`.
+2. **Status:** `draft → proposed → approved` (`deprecated` when retired). Features also go `in-progress → implemented`. Agents propose; owners approve. A document or feature that is `approved` keeps its requirements until its owner changes them.
+3. **IDs are permanent.** Never renumber or reuse them. Every ID you mention should exist.
+4. **Describe intent, link to the truth.** Don't copy the schema, the OpenAPI spec or token values into prose. Link to the file and explain what it means.
+5. **One term per concept.** Use the glossary in 03. Words in its *Avoid* column are synonyms to stay away from.
+6. **Bump `last_reviewed`** when you've checked that a document still matches the code, even if you changed nothing.
+
+ADR (`decisions/ADR-nnnn-<name>.md`):
+
+```markdown
+---
+id: ADR-nnnn
+title: <decision in a few words>
+status: proposed        # proposed → accepted | rejected; later superseded (set superseded_by) or deprecated
+date: <yyyy-mm-dd>
+---
+## Context
+## Decision
+## Alternatives considered
+## Consequences
+```
+
+Deviation (`deviations/DEV-nnn-<name>.md`), when the code is meant to differ from the blueprint for now:
+
+```markdown
+---
+id: DEV-nnn
+title: <what differs>
+status: open            # open → accepted (intentional) → resolved (code or blueprint changed)
+blueprint_ref: <document section or FEAT-nnn>
+review_by: <date or milestone>
+---
+## What the blueprint says
+## What the code does
+## Why
+## Resolution plan
+```

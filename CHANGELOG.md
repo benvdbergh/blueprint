@@ -6,23 +6,28 @@ All notable changes to the `product-blueprint` installer and the template it ins
 
 ## [0.3.0] - 2026-11-20
 
-A leaner footprint: projects keep only what they own, and the checks, templates and workflow specs run from the package.
-
-### Changed
-- `init` no longer copies `scripts/`, `templates/`, `contracts/README.md`, `governance/README.md`, `governance/workflows/`, `governance/health-report-template.md` or the `blueprint/*/_TEMPLATE.md` files into the project. What it writes: `AGENTS.md` (+ provider files), the eight blueprint documents and `blueprint/README.md`, `governance/config.json`, the workflows, actions, PR template, issue forms and `CODEOWNERS`.
-- The workflows call the CLI through the new `.github/actions/setup-blueprint` action (`$BLUEPRINT`), pinned to the installed version (`npx product-blueprint@0.3.0`). `AGENTS.md`, the Cursor and Copilot files, the prompts and the specs use the same pinned call.
-- AI workflows read their instructions with `blueprint prompt <name>`, which prefers the project's `.claude/commands/<name>.md`. `.claude/commands/` is now installed with the `claude` provider only.
-- `lovable` no longer installs `governance/agents/lovable-knowledge.md`; `blueprint docs lovable` prints the text to paste.
-- `health-facts` finds its sibling checks next to itself instead of in `scripts/governance/`.
+The workflows are now plain instructions for agents instead of GitHub Actions. A project gets the blueprint documents, `AGENTS.md` and five instruction files, and nothing to maintain besides them. Point an agent at an instruction file on demand, or from a scheduled task (for example a Claude Code scheduled task with the prompt "Follow `blueprint/workflows/sync.md`").
 
 ### Added
-- Commands: `check [blueprint|protected|impact|trace|terminology|all]`, `guard`, `facts`, `run <script>`, `setup-github`, `new feature|adr|deviation "<title>"` (next free ID, filled-in front matter), `new openapi|dependency-cruiser|visual-test|package-scripts`, `docs [name]`, `prompt [name]`.
-- `upgrade`: refreshes an existing setup and removes files an earlier version installed that the layout no longer needs, only when they're unchanged and nothing still calls them. `init` on an old setup reports them without removing anything.
-- `--vendor`: copies the CLI and everything it serves into `.blueprint/` for CI without npm access; `--lean` switches back. The install record now has a `layout`.
-- `cli/stamp-version.mjs` (the npm `version` script) keeps the `product-blueprint@x.y.z` pins in step with `package.json`.
+- `blueprint/workflows/`: `sync` (update the documents for recent code changes, open a PR; was WF-06), `audit` (read-only health report; was WF-07), `review` (check a branch or PR against the blueprint; was WF-02/03/04 reviews and the impact analysis), `define-feature` (was WF-01), `onboard` (was WF-00). Each says when it runs, what it may change, how to decide, and how it ends.
+- `blueprint/README.md` → *Which document covers what*: the code-to-document map agents use (was `impactRules` in `governance/config.json`), plus the ADR and deviation formats.
+- `blueprint upgrade`: refreshes installed files you haven't edited, including blueprint documents that are still the untouched template, and removes files an older version installed that are no longer needed. It only removes files that are byte-for-byte what was installed, keeps the old scripts while a workflow you edited still calls them, and never removes `.gitignore` or `CODEOWNERS`. `init` on an old setup lists these files without deleting anything.
+- Claude Code commands `/blueprint-sync`, `/blueprint-audit`, `/blueprint-review`, `/blueprint-define-feature`, `/blueprint-onboard`. Each one only points to its instruction file.
+
+### Removed
+- The GitHub Actions `wf01`–`wf07`, `.github/actions/`, the PR template with its *Blueprint impact* table, the issue forms and `CODEOWNERS`.
+- `scripts/` (check-blueprint, check-impact, check-protected, trace, terminology, guard-paths, health-facts, ci/run, setup/configure-github.sh), `templates/`, `contracts/README.md`.
+- `governance/`: `config.json` (ownership, impact rules, enforcement mode), the handbook, the WF-00…07 specs, the health-report template and the Lovable knowledge file. The rules that mattered are in `AGENTS.md` and `blueprint/README.md`. `init --providers lovable` prints the Lovable text.
+- The `_TEMPLATE.md` files in `blueprint/features`, `decisions`, `deviations` and `prototypes/README.md`. The formats are in `define-feature.md` and `blueprint/README.md`.
+- `init` options `--mode` (report/enforce) and `--owner`, the `.gitignore` merge, and the approval labels.
+
+### Changed
+- `AGENTS.md` is shorter: seven rules, with "keep the blueprint true in the same change" first, and no mandatory impact table.
+- The install record moved from `governance/.blueprint-install.json` to `blueprint/.install.json`. `upgrade` moves it.
+- The Cursor rule is now `.cursor/rules/blueprint.mdc`.
 
 ### Upgrading from 0.2
-Run `npx product-blueprint@0.3.0 upgrade` on a branch, review the diff and merge it. Edited copies of the old scripts or specs are kept and listed; delete them once nothing uses them.
+Run `npx product-blueprint@0.3.0 upgrade` on a branch and review the diff. Documents you filled stay as they are. They may still mention WF numbers or labels; the next `sync` run, or a quick edit, cleans that up. If you had made `quality-gate` or `governance-gate` required checks in branch protection, remove them.
 
 ## [0.2.0] - 2026-11-20
 

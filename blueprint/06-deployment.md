@@ -4,12 +4,11 @@ title: Deployment & Operations
 status: draft
 owner: Engineering / Operations
 last_reviewed: 2026-11-19
-ai_workflows: [WF-03, WF-06]
 ---
 
 # 06 · Deployment & Operations
 
-> **Authority:** Engineering / Operations. **AI policy:** WF-03 and WF-06 propose updates via PR.
+> **Authority:** Engineering / Operations. **AI policy:** agents propose updates via PR (`workflows/sync.md`).
 > **Changes when:** environments, release process, infrastructure or operational practices change.
 
 ## Environments
@@ -19,10 +18,10 @@ ai_workflows: [WF-03, WF-06]
 | Production | <url> | `main` | real |
 
 ## Release process
-1. PR passes the WF-05 quality gate (required checks).
+1. PR passes CI (<lint, tests, build>).
 2. Review + merge to `main`.
 3. <deploy mechanism — e.g. Lovable publish / Vercel auto-deploy>
-4. WF-06 proposes blueprint sync for the merged change.
+4. The blueprint sync task (`blueprint/workflows/sync.md`) picks up the merged change.
 
 ## Configuration & secrets
 | Name | Where set | Used by |

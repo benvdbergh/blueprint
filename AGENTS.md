@@ -1,77 +1,39 @@
 # AGENTS.md
 
-Shared instructions for **every** contributor to this repository: Claude Code, Cursor, Lovable, other agents, and humans. This is the only instruction file. Tool-specific files (`CLAUDE.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, `.gemini/settings.json`, Lovable project knowledge) point here and add nothing that contradicts it.
+Shared instructions for everyone who works in this repository: Claude Code, Cursor, Copilot, Lovable, other agents, and people. Tool-specific files (`CLAUDE.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, Lovable's project knowledge) point here.
 
-## 1. How this repository works
+## How this repository works
 
-| Folder | What it is | Truth for |
+`blueprint/` holds the agreed intent: what the product is for, what it does, how it's built and why. The code, migrations, API specs and tests show what it actually does. The two should tell the same story. When they don't, one of them needs to change, and the team should know which.
+
+Start each task by reading `blueprint/00-product-core.md`, then only the blueprint documents that relate to the task. `blueprint/README.md` → *Which document covers what* maps code paths to documents.
+
+If the documents are still empty templates (`status: draft`, placeholders like `<Term>`) in a repository that already has code, the blueprint hasn't been onboarded yet. To set it up, follow `blueprint/workflows/onboard.md`. For any other task, mention that onboarding is pending and carry on.
+
+## Rules
+
+1. **Keep the blueprint true in the same change.** When your change makes a blueprint statement wrong (a table, an endpoint, a screen, a term), update that statement in the same PR. If you can't, say in the PR description which document needs a follow-up.
+2. **Propose, don't override.** Never edit `blueprint/00-product-core.md`. Don't change the requirements of anything with `status: approved`; describe the change you'd propose instead. Factual updates (a new screen in the inventory, a delivery-log line) are fine.
+3. **New behaviour starts with a spec.** A new feature gets a spec in `blueprint/features/` before it's built (`blueprint/workflows/define-feature.md`). Small fixes and refactors don't.
+4. **Use the domain's words.** Use the terms from the glossary in `blueprint/03-domain-data.md`, not the ones in its *Avoid* column.
+5. **Make deviations explicit.** If the code deliberately differs from the blueprint, add `blueprint/deviations/DEV-nnn-<name>.md` (format in `blueprint/README.md`) instead of bending either side to look consistent.
+6. **Link acceptance criteria to tests.** When a test covers `AC-nnn.n`, put the ID in the test name or a `// covers: AC-nnn.n` comment.
+7. **Report drift you didn't cause.** If you notice a mismatch outside your task, mention it in your PR or an issue. Don't fix it in passing.
+
+## Workflows
+
+Plain instructions an agent can follow, on demand or as a scheduled task (for example a Claude Code scheduled task whose prompt is "Follow `blueprint/workflows/sync.md`").
+
+| File | What it does | When |
 |---|---|---|
-| `blueprint/` | Agreed product and engineering **intent** (00–07, features, ADRs, deviations, prototypes) | *What* and *why* |
-| `src/`, `supabase/`, … | The implementation | *What the product actually does* |
-| `supabase/migrations/` (or equivalent) | Database migrations | The *actual* schema |
-| `contracts/openapi.yaml` | API contract | The *actual* API surface |
-| tests | Executable behaviour | Whether acceptance criteria hold |
-| `governance/config.json` | How we work: ownership, impact rules, enforcement mode | The rules below |
-| `product-blueprint` (npm) | The governance checks, templates and workflow specs, pinned in `governance/.blueprint-install.json` (see §6) | How the rules are checked |
-
-Start of every task: read `blueprint/00-product-core.md`, then **only** the blueprint documents relevant to the task. `governance/config.json` → `impactRules` tells you which documents relate to which code paths.
-
-If the blueprint documents are still unfilled templates (`status: draft`, placeholders like `<Term>`) while the repository already has code, the blueprint hasn't been onboarded yet. When your task is to set up the blueprint, run `npx product-blueprint@0.3.0 docs WF-00` and follow it. For any other task, mention to the person that onboarding is pending and carry on.
-
-## 2. Non-negotiable rules
-
-1. **Git is the shared source of truth.** Do not keep plans, specs or decisions anywhere else (no tool-private notes, no Lovable-only knowledge). If it matters, it goes in the repo.
-2. **Approved specifications are protected.** You may *propose* changes to the blueprint. You may not silently change approved requirements or product strategy. Never edit `blueprint/00-product-core.md`; open an issue instead. A file with `status: approved` changes only in a PR that its owner approves with the `blueprint:approved-change` label.
-3. **Implementation changes require impact analysis.** Every PR fills in the *Blueprint impact* table in the PR template: for each of 00–07, `none`, `updated`, `proposed` (with a link to the follow-up), or `deviation` (with `DEV-nnn`). CI checks this table.
-4. **Generated artifacts are generated.** Never hand-edit generated files (OpenAPI output, Supabase types, lockfiles, visual baselines without intent). Change the source and regenerate.
-5. **Tests validate behaviour; documentation describes intent.** When you implement an acceptance criterion `AC-nnn.n`, put its ID in the test name or in a `// covers: AC-nnn.n` comment.
-6. **Every deviation is explicit.** If you deliberately implement something differently from the blueprint, add a deviation (`npx product-blueprint@0.3.0 new deviation "<title>"` creates `blueprint/deviations/DEV-nnn-*.md`) explaining why. Don't bend the code or the docs just to make them look consistent.
-7. **Detection before remediation.** When you notice drift that isn't part of your task, report it (PR description, issue). Don't fix it in passing.
-
-## 3. Ownership (who may change what)
-
-| Document | Authority | AI may propose via |
-|---|---|---|
-| 00 Product Core | Product owner | issue only |
-| 01 Product · 07 Roadmap | Product management | WF-01, WF-06 |
-| 02 UX & Design | UX / Product | WF-02, WF-06 |
-| 03 Domain & Data · 04 Architecture | Architecture | WF-03, WF-06 |
-| 05 Interfaces | API / Engineering | WF-04, WF-06 |
-| 06 Deployment | Engineering / Operations | WF-03, WF-06 |
-
-## 4. Working on a change
-
-1. **Is it defined?** New behaviour needs a feature spec in `blueprint/features/` (status `approved` before implementation starts). No spec: propose one first (`/wf01-define-feature` in Claude Code, the *Feature request* issue form, or `npx product-blueprint@0.3.0 new feature "<title>"`).
-2. **Branch + PR.** Never push to `main`. One concern per PR.
-3. **Implement** using the domain terms from the Ubiquitous language table in `03` (the *Avoid* column is checked).
-4. **Test** each acceptance criterion you touched and reference its ID.
-5. **Impact analysis.** Run `npx product-blueprint@0.3.0 check impact --body-file <your PR body>` locally or let CI do it. Update affected documents in the same PR where you can.
-6. **Gate.** The `quality-gate` and `governance-gate` checks must be green. Do not disable, skip or weaken checks, tests or lint rules to get there. If a check is wrong, say so in the PR.
-
-## 5. Writing in the blueprint
-
-- Minimal, precise edits. Preserve structure, headings, IDs and the author's wording. No reformatting of untouched sections.
-- Describe intent and link to the truth (`contracts/openapi.yaml`, migrations, token files). Don't copy them into prose.
-- IDs (`FEAT-nnn`, `AC-nnn.n`, `ADR-nnnn`, `DEV-nnn`) are permanent: never renumber or reuse them.
-- Update `last_reviewed` when you have verified a document against the code.
-- Validate with `npx product-blueprint@0.3.0 check blueprint`.
-
-## 6. Commands
-
-The checks, templates and workflow specs come from the `product-blueprint` package at the version this repository is set up with. There are no copies to edit in the repository (unless it was set up with `--vendor`).
-
-```bash
-npx product-blueprint@0.3.0 check                  # blueprint structure, traceability, terminology
-npx product-blueprint@0.3.0 check impact --base origin/main --body-file pr.md
-npx product-blueprint@0.3.0 check protected --base origin/main
-npx product-blueprint@0.3.0 check trace            # acceptance criteria ↔ tests
-npx product-blueprint@0.3.0 new feature "<title>"  # also: adr, deviation, openapi, dependency-cruiser, visual-test
-npx product-blueprint@0.3.0 docs [WF-00 … WF-07]   # workflow specs and the governance handbook
-npx product-blueprint@0.3.0 run <script>           # lint | typecheck | test | build | … (skips if undefined)
-```
+| `blueprint/workflows/sync.md` | Updates the blueprint to match recent code changes; opens a PR | daily, or after merges |
+| `blueprint/workflows/audit.md` | Reports where blueprint and code disagree; changes nothing | weekly |
+| `blueprint/workflows/review.md` | Checks a branch or PR against the blueprint | on demand, or on open PRs |
+| `blueprint/workflows/define-feature.md` | Turns a request into a feature spec | on demand |
+| `blueprint/workflows/onboard.md` | Drafts the blueprint from an existing codebase | once |
 
 <!-- Project-specific additions (stack, commands, conventions) go below this line. Keep them short and in this one file. -->
-## 7. Project specifics
+## Project specifics
 
 - Stack: <fill in, or point to blueprint/04-architecture.md>
 - Install: <e.g. npm ci>

@@ -4,13 +4,12 @@ title: Interfaces & Integrations
 status: draft
 owner: API / Engineering
 last_reviewed: 2026-11-19
-ai_workflows: [WF-04, WF-06]
 ---
 
 # 05 · Interfaces & Integrations
 
-> **Authority:** API / Engineering. **AI policy:** WF-04 and WF-06 propose updates via PR.
-> **Source-of-truth split:** `contracts/openapi.yaml` is the machine-readable contract and is validated in CI (WF-04). This document explains intent, consumers, guarantees and integrations. It does **not** copy endpoint definitions, it links to them.
+> **Authority:** API / Engineering. **AI policy:** agents propose updates via PR (`workflows/sync.md`, `workflows/review.md`).
+> **Source-of-truth split:** `contracts/openapi.yaml` is the machine-readable contract. This document explains intent, consumers, guarantees and integrations. It does **not** copy endpoint definitions, it links to them.
 
 ## API overview
 | API | Contract | Consumers | Auth | Versioning |
@@ -18,7 +17,7 @@ ai_workflows: [WF-04, WF-06]
 | <Public REST API> | `contracts/openapi.yaml` | <web app, partners> | <JWT / API key> | <URL / header / none> |
 
 ## Compatibility policy
-- Breaking changes are detected by `oasdiff` in WF-04 and require the `api:breaking-approved` label.
+- Breaking changes are agreed with the API owner and the consumers listed below before they merge.
 - <deprecation window, communication>
 
 ## Internal interfaces

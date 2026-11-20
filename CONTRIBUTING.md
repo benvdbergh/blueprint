@@ -2,10 +2,10 @@
 
 Thanks for helping. This repository is two things at once:
 
-- **The template**: `AGENTS.md`, `blueprint/`, `governance/`, `.github/`, `.claude/`, `.cursor/`. `cli/manifest.mjs` (`CORE`, `PROVIDERS`) says which of these files end up in other people's projects.
-- **The package** (`product-blueprint` on npm): `bin/`, `cli/`, `scripts/`, `templates/`, the workflow specs and handbook in `governance/`, the `_TEMPLATE.md` files. It sets up projects and serves the rest to them as commands (`check`, `new`, `docs`, `prompt`, …), so projects don't keep copies. `init --vendor` copies it into a project's `.blueprint/`.
+- **The template**: `AGENTS.md`, `CLAUDE.md`, `blueprint/` (documents and `workflows/`), `.claude/commands/`, `.cursor/rules/`, `.github/copilot-instructions.md`. `cli/manifest.mjs` (`CORE`, `PROVIDERS`) lists what ends up in projects.
+- **The installer** (`product-blueprint` on npm): `bin/`, `cli/`, `test/`. It copies the template into a project and upgrades it later.
 
-The repository follows its own rules: read [`AGENTS.md`](AGENTS.md) first. Every PR fills in the *Blueprint impact* table of the PR template, and the `quality-gate` and `governance-gate` checks must pass.
+The repository follows its own rules: read [`AGENTS.md`](AGENTS.md) first.
 
 ## Development
 
@@ -14,19 +14,17 @@ Requirements: Node ≥ 20 and git. There are no dependencies to install.
 ```bash
 npm test                                          # installer tests (node:test)
 node bin/blueprint.mjs init /tmp/try --dry-run    # try the installer locally
-node bin/blueprint.mjs check                      # the template's own checks (AGENTS.md §6 says npx product-blueprint@…; here, use the local bin)
 ```
 
-- When you add a file to the template, decide whether projects need it in their repository (an entry in `CORE` or a provider in `cli/manifest.mjs`, and how it behaves when the file already exists: `managed`, `seed`, `block`, `json`, `lines`) or whether the package can serve it (`docs`, `new`, `prompt` in `cli/commands.mjs`, plus `VENDOR`). Prefer serving it.
-- Payload files call the CLI as `npx product-blueprint@<version>`. `npm version` stamps the new version into them (`cli/stamp-version.mjs`), and a test fails if one is out of date. `init` stamps the installed version (or the vendored path) again.
-- The workflows in this repository run its own `bin/blueprint.mjs` (`.github/actions/setup-blueprint` detects the package repository), so a PR's checks run the PR's code.
-- When you change `.gitignore`, copy it to `cli/gitignore.txt` (a test checks they match; npm never packs `.gitignore`).
+- When you add a file to the template, add it to `cli/manifest.mjs` and decide how it behaves when the file already exists in a project (`managed`, `seed`, `block`, `json`).
+- Workflow instructions (`blueprint/workflows/*.md`) are prompts for agents running unattended. Keep each one short and start it with **Run**, **Changes** and **Ends with**, then the goal, the steps, how to decide, and what to report. A test checks the headers.
+- When you remove a file from the template, `upgrade` removes it from projects if they haven't edited it. Nothing else is needed.
 - Files in `.github/workflows/package-*.yml` are this repository's own CI and are never installed.
 - Add a line under `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) for anything a user would notice.
 
 ## Releasing
 
-1. Open a PR that moves the `Unreleased` entries in `CHANGELOG.md` under a new `## [x.y.z] - YYYY-MM-DD` heading and bumps `version` in `package.json` (`npm version <patch|minor|major> --no-git-tag-version`, which updates the lockfile and the `product-blueprint@x.y.z` pins too).
+1. Open a PR that moves the `Unreleased` entries in `CHANGELOG.md` under a new `## [x.y.z] - YYYY-MM-DD` heading and bumps `version` in `package.json` (`npm version <patch|minor|major> --no-git-tag-version`, which updates the lockfile too).
 2. Merge it.
 3. On GitHub: **Actions → Package · release → Run workflow**, on `main`. Tick *Dry run* first if you want to see the checks and the package contents without publishing.
 
